@@ -49,10 +49,31 @@ function saveStorage(key, value) {
 }
 
 function normalizeBarcode(value) {
-  // Barcodes are strings. Never convert them to numbers.
-  return String(value ?? "")
+  if (value === undefined || value === null) return "";
+
+  // Convert to string and clean all whitespace, including non-breaking spaces & unicode control chars
+  let str = String(value)
     .trim()
-    .replace(/\s+/g, "");
+    .replace(/[\s\u00A0\u200B-\u200D\uFEFF]/g, "");
+
+  // Handle scientific notation (e.g. 6.00921e+12 -> 6009211225657)
+  if (/^[+-]?\d+(\.\d+)?[eE][+-]?\d+$/.test(str)) {
+    try {
+      const num = Number(str);
+      if (!isNaN(num)) {
+        str = num.toLocaleString("fullwide", { useGrouping: false });
+      }
+    } catch (e) {
+      console.warn("Could not parse scientific notation barcode:", str);
+    }
+  }
+
+  // Strip trailing decimal zeroes from Excel float conversions (e.g. "6009211225657.0")
+  if (/^\d+\.0+$/.test(str)) {
+    str = str.split(".")[0];
+  }
+
+  return str;
 }
 
 function displayValue(value) {
@@ -105,39 +126,6 @@ function showNotice(message, type = "info") {
   setTimeout(() => notice.classList.add("hidden"), 5000);
 }
 
-// Helper to determine units per case automatically
-function getUnitsPerCaseNumber(product) {
-  if (!product) return 0;
-
-  // 1. Direct unitsPerCase property if specified in Excel header
-  if (product.unitsPerCase) {
-    const parsed = parseInt(String(product.unitsPerCase).replace(/[^\d]/g, ""), 10);
-    if (!isNaN(parsed) && parsed > 0) return parsed;
-  }
-
-  // 2. Parse from Product Code / Pack Size / Description (e.g. "24 Units:", "48 Units", "24x100g")
-  const combinedText = `${product.productCode || ""} ${product.packSize || ""} ${product.description || ""}`;
-  const match = combinedText.match(/(\d+)\s*(units?|pack|pk|x|\/|:)/i);
-  if (match) {
-    const val = parseInt(match[1], 10);
-    if (!isNaN(val) && val > 0) return val;
-  }
-
-  return 0;
-}
-
-// Automatically calculate Total Quantity = Cases * Units per Case
-function autoCalculateUnits() {
-  if (!currentScannedProduct) return;
-
-  const cases = numberOrZero($("loadCases").value);
-  const unitsPerCase = getUnitsPerCaseNumber(currentScannedProduct);
-
-  if (unitsPerCase > 0) {
-    $("loadQuantity").value = cases * unitsPerCase;
-  }
-}
-
 // ---------- Navigation ----------
 
 function showSection(sectionId) {
@@ -164,8 +152,6 @@ function showSection(sectionId) {
   } else if (sectionId === "scan") {
     updateScanSessionUI();
     setTimeout(() => focusBarcodeInput(), 150);
-  } else if (sectionId === "verify") {
-    setTimeout(() => $("verifyBarcodeInput")?.focus(), 150);
   }
 }
 
@@ -297,8 +283,8 @@ async function handleExcelFile(event) {
     const buffer = await file.arrayBuffer();
     const workbook = XLSX.read(buffer, {
       type: "array",
-      cellText: true,
-      cellDates: false
+      cellText: false,
+      raw: true
     });
 
     const firstSheetName = workbook.SheetNames[0];
@@ -309,10 +295,9 @@ async function handleExcelFile(event) {
 
     const sheet = workbook.Sheets[firstSheetName];
 
-    // raw values are kept as strings where possible.
     const rows = XLSX.utils.sheet_to_json(sheet, {
       defval: "",
-      raw: false
+      raw: true
     });
 
     if (!rows.length) {
@@ -354,7 +339,7 @@ function normalizeHeader(header) {
   return String(header ?? "")
     .trim()
     .toLowerCase()
-    .replace(/[\s_\-/]+/g, "");
+    .replace(/[\s\u00A0_\-/]+/g, "");
 }
 
 function findColumn(row, possibleNames) {
@@ -367,7 +352,7 @@ function findColumn(row, possibleNames) {
     if (exact) return exact;
   }
 
-  // More forgiving fallback: find a header containing a keyword.
+  // Fallback match by header substring
   for (const key of keys) {
     const normalized = normalizeHeader(key);
 
@@ -380,15 +365,25 @@ function findColumn(row, possibleNames) {
 }
 
 function normalizeProductRow(row) {
-  const barcodeColumn = findColumn(row, [
+  let barcodeColumn = findColumn(row, [
     "Barcode",
     "Bar Code",
     "Pallet Barcode",
     "EAN",
     "UPC",
     "GTIN",
-    "Barcode Number"
+    "Barcode Number",
+    "Code Number"
   ]);
+
+  // Dynamic fallback: look across all columns for numeric digits
+  if (!barcodeColumn) {
+    const keys = Object.keys(row);
+    barcodeColumn = keys.find(k => {
+      const val = normalizeBarcode(row[k]);
+      return /^\d{6,18}$/.test(val);
+    });
+  }
 
   const productCodeColumn = findColumn(row, [
     "Product Code",
@@ -417,14 +412,6 @@ function normalizeProductRow(row) {
     "Size"
   ]);
 
-  const unitsPerCaseColumn = findColumn(row, [
-    "Units Per Case",
-    "Units/Case",
-    "Units Per Pack",
-    "Units",
-    "Pack Size Units"
-  ]);
-
   const casesColumn = findColumn(row, [
     "Cases Per Pallet",
     "Cases/Pallet",
@@ -444,71 +431,23 @@ function normalizeProductRow(row) {
     description: descriptionColumn ? String(row[descriptionColumn]).trim() : "",
     customer: customerColumn ? String(row[customerColumn]).trim() : "",
     packSize: packSizeColumn ? String(row[packSizeColumn]).trim() : "",
-    unitsPerCase: unitsPerCaseColumn ? String(row[unitsPerCaseColumn]).trim() : "",
     casesPerPallet: casesColumn ? String(row[casesColumn]).trim() : "",
     palletType: palletTypeColumn ? String(row[palletTypeColumn]).trim() : ""
   };
 }
 
 function getUniqueBarcodeCount() {
-  return new Set(products.map(product => product.barcode)).size;
+  return new Set(products.map(product => normalizeBarcode(product.barcode))).size;
 }
 
 function getProductByBarcode(barcode) {
   const normalized = normalizeBarcode(barcode);
+  if (!normalized) return null;
 
-  return products.find(product => product.barcode === normalized) || null;
+  return products.find(product => normalizeBarcode(product.barcode) === normalized) || null;
 }
 
-// ---------- Warehouse Barcode Verification (No Active Session Required) ----------
-
-function verifyWarehouseBarcode() {
-  const input = $("verifyBarcodeInput");
-  const barcode = normalizeBarcode(input.value);
-
-  if (!barcode) {
-    showToast("Enter or scan a barcode first.", "warning");
-    input.focus();
-    return;
-  }
-
-  const product = getProductByBarcode(barcode);
-  const resultDiv = $("verifyResult");
-
-  if (!product) {
-    resultDiv.className = "scan-result error";
-    resultDiv.innerHTML = `
-      <div class="result-icon">✕</div>
-      <h3>INVALID / BARCODE NOT FOUND</h3>
-      <p><strong>Barcode:</strong> ${escapeHtml(barcode)}</p>
-      <p>This barcode does not exist in the imported Product Master.</p>
-      <button id="verifyReportButton" class="danger-button" style="margin-top: 10px;">Report Barcode Problem</button>
-    `;
-
-    $("verifyReportButton")?.addEventListener("click", () => {
-      openProblemModal(barcode, null);
-    });
-    return;
-  }
-
-  const unitsPerCase = getUnitsPerCaseNumber(product);
-
-  resultDiv.className = "scan-result success";
-  resultDiv.innerHTML = `
-    <div class="result-icon">✓</div>
-    <h3>VALID BARCODE</h3>
-    <p><strong>Barcode:</strong> ${escapeHtml(product.barcode)}</p>
-    <p><strong>Product:</strong> ${escapeHtml(displayValue(product.description))}</p>
-    <p><strong>Product Code:</strong> ${escapeHtml(displayValue(product.productCode))}</p>
-    <p><strong>Customer:</strong> ${escapeHtml(displayValue(product.customer))}</p>
-    <p><strong>Pack Size:</strong> ${escapeHtml(displayValue(product.packSize))}</p>
-    <p><strong>Units / Case:</strong> ${unitsPerCase > 0 ? unitsPerCase : 'Not specified'}</p>
-    <p><strong>Cases / Pallet:</strong> ${escapeHtml(displayValue(product.casesPerPallet))}</p>
-    <p><strong>Status:</strong> Verified in Product Master</p>
-  `;
-}
-
-// ---------- Barcode validation (Truck Loading Scan) ----------
+// ---------- Barcode validation ----------
 
 function checkBarcode() {
   const barcode = normalizeBarcode($("barcodeInput").value);
@@ -628,17 +567,10 @@ function showLoadConfirmation(product) {
   $("loadCustomer").value = currentSession?.customer || product.customer || "";
   $("loadDelivery").value = currentSession?.delivery || "";
   $("loadRoute").value = currentSession?.route || "";
-  
-  const initialCases = product.casesPerPallet || 1;
-  $("loadCases").value = initialCases;
-  
+  $("loadCases").value = product.casesPerPallet || "";
+  $("loadQuantity").value = "";
   $("loadPalletType").value = product.palletType || "";
   $("loadUser").value = currentSession?.user || "";
-
-  // Auto calculate total units
-  autoCalculateUnits();
-
-  const unitsPerCase = getUnitsPerCaseNumber(product);
 
   $("loadProductSummary").innerHTML = `
     <div class="summary-item"><small>Barcode</small><strong>${escapeHtml(product.barcode)}</strong></div>
@@ -646,7 +578,6 @@ function showLoadConfirmation(product) {
     <div class="summary-item"><small>Product</small><strong>${escapeHtml(displayValue(product.description))}</strong></div>
     <div class="summary-item"><small>Customer</small><strong>${escapeHtml(displayValue(product.customer))}</strong></div>
     <div class="summary-item"><small>Pack Size</small><strong>${escapeHtml(displayValue(product.packSize))}</strong></div>
-    <div class="summary-item"><small>Units / Case</small><strong>${unitsPerCase > 0 ? unitsPerCase : 'Not specified'}</strong></div>
     <div class="summary-item"><small>Cases/Pallet</small><strong>${escapeHtml(displayValue(product.casesPerPallet))}</strong></div>
   `;
 
@@ -773,9 +704,7 @@ async function startCameraScanner() {
         stopCameraScanner();
         checkBarcode();
       },
-      () => {
-        // Scanner continuously checks frames. Ignore normal "no barcode found" messages.
-      }
+      () => {}
     );
 
     scannerRunning = true;
@@ -899,26 +828,22 @@ function renderProducts() {
 
   if (!filtered.length) {
     $("productBody").innerHTML =
-      `<tr><td colspan="8" class="empty-table">No products found.</td></tr>`;
+      `<tr><td colspan="7" class="empty-table">No products found.</td></tr>`;
     return;
   }
 
   $("productBody").innerHTML = filtered
-    .map(product => {
-      const units = getUnitsPerCaseNumber(product);
-      return `
-        <tr>
-          <td><code>${escapeHtml(product.barcode)}</code></td>
-          <td>${escapeHtml(displayValue(product.productCode))}</td>
-          <td>${escapeHtml(displayValue(product.description))}</td>
-          <td>${escapeHtml(displayValue(product.customer))}</td>
-          <td>${escapeHtml(displayValue(product.packSize))}</td>
-          <td>${units > 0 ? units : "-"}</td>
-          <td>${escapeHtml(displayValue(product.casesPerPallet))}</td>
-          <td>${escapeHtml(displayValue(product.palletType))}</td>
-        </tr>
-      `;
-    })
+    .map(product => `
+      <tr>
+        <td><code>${escapeHtml(product.barcode)}</code></td>
+        <td>${escapeHtml(displayValue(product.productCode))}</td>
+        <td>${escapeHtml(displayValue(product.description))}</td>
+        <td>${escapeHtml(displayValue(product.customer))}</td>
+        <td>${escapeHtml(displayValue(product.packSize))}</td>
+        <td>${escapeHtml(displayValue(product.casesPerPallet))}</td>
+        <td>${escapeHtml(displayValue(product.palletType))}</td>
+      </tr>
+    `)
     .join("");
 }
 
@@ -1264,62 +1189,6 @@ function exportAllData() {
   URL.revokeObjectURL(url);
 }
 
-// ---------- Demo data ----------
-
-function loadDemoData() {
-  products = [
-    {
-      barcode: "6001234567890",
-      productCode: "24 Units: CC001",
-      description: "Tomato Corn Crunch",
-      customer: "Woolworths",
-      packSize: "22g",
-      unitsPerCase: "24",
-      casesPerPallet: "20",
-      palletType: "CHEP"
-    },
-    {
-      barcode: "6001234567891",
-      productCode: "48 Units: CC002",
-      description: "Cheese Corn Crunch",
-      customer: "Woolworths",
-      packSize: "22g",
-      unitsPerCase: "48",
-      casesPerPallet: "20",
-      palletType: "CHEP"
-    },
-    {
-      barcode: "6001234567892",
-      productCode: "12 Units: CC003",
-      description: "Jalapeno Corn Crunch",
-      customer: "Shoprite",
-      packSize: "22g",
-      unitsPerCase: "12",
-      casesPerPallet: "20",
-      palletType: "CHEP"
-    },
-    {
-      barcode: "0001234567895",
-      productCode: "26 Units: HS001",
-      description: "Caramel HOP Strips",
-      customer: "Checkers",
-      packSize: "22g",
-      unitsPerCase: "26",
-      casesPerPallet: "20",
-      palletType: "CHEP"
-    }
-  ];
-
-  saveStorage(STORAGE_KEYS.products, products);
-  renderProducts();
-
-  $("excelStatus").textContent =
-    `Demo data loaded • Products: ${products.length} • Status: Ready for Scanning`;
-  $("excelStatus").className = "alert alert-success";
-
-  showToast("Demo product master loaded.", "success");
-}
-
 // ---------- Clear data ----------
 
 function clearLoadingRecords() {
@@ -1364,8 +1233,8 @@ function clearAllData() {
   renderProducts();
   renderLoadingHistory();
   renderProblems();
-  updateDashboard();
   renderReports();
+  updateDashboard();
   updateSessionUI();
 
   $("excelStatus").textContent =
@@ -1406,7 +1275,7 @@ document.addEventListener("DOMContentLoaded", () => {
   $("cancelSessionButton").addEventListener("click", closeSessionModal);
   $("startSessionButton").addEventListener("click", startSession);
 
-  // Scan pallet (Loading mode)
+  // Scan
   $("checkBarcodeButton").addEventListener("click", checkBarcode);
 
   $("barcodeInput").addEventListener("keydown", event => {
@@ -1420,31 +1289,8 @@ document.addEventListener("DOMContentLoaded", () => {
     $("barcodeInput").value = $("barcodeInput").value.replace(/[\r\n]/g, "");
   });
 
-  // Auto calculate total units when cases field changes
-  $("loadCases")?.addEventListener("input", autoCalculateUnits);
-
-  // Warehouse Barcode Checker listeners
-  $("verifyBarcodeButton")?.addEventListener("click", verifyWarehouseBarcode);
-
-  $("verifyBarcodeInput")?.addEventListener("keydown", event => {
-    if (event.key === "Enter") {
-      event.preventDefault();
-      verifyWarehouseBarcode();
-    }
-  });
-
   $("startCameraButton").addEventListener("click", startCameraScanner);
   $("stopCameraButton").addEventListener("click", stopCameraScanner);
-
-  $("demoValidButton").addEventListener("click", () => {
-    $("barcodeInput").value = "6001234567890";
-    checkBarcode();
-  });
-
-  $("demoInvalidButton").addEventListener("click", () => {
-    $("barcodeInput").value = "9999999999999";
-    checkBarcode();
-  });
 
   $("cancelLoadButton").addEventListener("click", () => {
     currentScannedProduct = null;
@@ -1467,7 +1313,6 @@ document.addEventListener("DOMContentLoaded", () => {
   // Product master
   $("importExcelButton").addEventListener("click", importExcel);
   $("excelFileInput").addEventListener("change", handleExcelFile);
-  $("loadDemoDataButton").addEventListener("click", loadDemoData);
   $("productSearch").addEventListener("input", renderProducts);
 
   // History
@@ -1499,13 +1344,12 @@ document.addEventListener("DOMContentLoaded", () => {
   updateDashboard();
   updateSessionUI();
 
-  // Warn if the user tries to leave while camera is active.
   window.addEventListener("beforeunload", () => {
     if (scannerRunning) {
       try {
         scanner.stop();
       } catch (error) {
-        // Ignore cleanup errors.
+        // Ignore cleanup errors
       }
     }
   });
