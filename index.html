@@ -7,10 +7,8 @@
   <title>Dispatch Barcode Tracker</title>
   <link rel="stylesheet" href="style.css">
 
-  <!-- SheetJS: reads Excel .xlsx/.xls files in the browser -->
   <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
 
-  <!-- html5-qrcode: browser camera barcode/QR scanner -->
   <script src="https://unpkg.com/html5-qrcode" defer></script>
 </head>
 <body>
@@ -27,6 +25,7 @@
   <nav id="mainNav" class="nav">
     <button class="nav-button active" data-section="dashboard">Dashboard</button>
     <button class="nav-button" data-section="scan">Scan Pallet</button>
+    <button class="nav-button" data-section="verify">Verify Barcode</button>
     <button class="nav-button" data-section="history">Loading History</button>
     <button class="nav-button" data-section="products">Product Master</button>
     <button class="nav-button" data-section="problems">Barcode Problems</button>
@@ -35,14 +34,16 @@
   </nav>
 
   <main class="container">
-    <!-- DASHBOARD -->
     <section id="dashboard" class="page-section active">
       <div class="page-heading">
         <div>
           <h2>Dashboard</h2>
           <p>Overview of today's dispatch loading.</p>
         </div>
-        <button id="dashboardScanButton" class="primary-button">Scan Pallet</button>
+        <div class="button-row">
+          <button class="secondary-button" data-go="verify">Verify Barcode</button>
+          <button id="dashboardScanButton" class="primary-button">Scan Pallet</button>
+        </div>
       </div>
 
       <div class="stat-grid">
@@ -111,7 +112,6 @@
       </div>
     </section>
 
-    <!-- SCAN -->
     <section id="scan" class="page-section">
       <div class="page-heading">
         <div>
@@ -122,8 +122,9 @@
       </div>
 
       <div id="noSessionWarning" class="alert alert-warning">
-        Start a loading session before scanning pallets.
-        <button id="startSessionFromScan" class="link-button">Start Session</button>
+        Start a loading session before scanning pallets to load on a truck.
+        <button id="startSessionFromScan" class="link-button">Start Session</button> or 
+        <button class="link-button" data-go="verify">Verify Barcodes without Loading</button>
       </div>
 
       <div class="scanner-grid">
@@ -159,7 +160,7 @@
           <div class="barcode-entry">
             <input id="barcodeInput" type="text" autocomplete="off" inputmode="text"
                    placeholder="Scan or type barcode..." autofocus>
-            <button id="checkBarcodeButton" class="primary-button">Check</button>
+            <button id="checkBarcodeButton" class="primary-button">Check & Load</button>
           </div>
 
           <div class="quick-test">
@@ -207,8 +208,8 @@
             <input id="loadCases" type="number" min="0" step="1" placeholder="Cases">
           </div>
           <div class="form-group">
-            <label for="loadQuantity">Quantity / Units</label>
-            <input id="loadQuantity" type="number" min="0" step="1" placeholder="Quantity">
+            <label for="loadQuantity">Total Units (Calculated)</label>
+            <input id="loadQuantity" type="number" min="0" step="1" placeholder="Total Units">
           </div>
           <div class="form-group">
             <label for="loadPalletType">Pallet Type</label>
@@ -229,7 +230,29 @@
       <div id="duplicatePanel" class="alert alert-warning hidden"></div>
     </section>
 
-    <!-- HISTORY -->
+    <section id="verify" class="page-section">
+      <div class="page-heading">
+        <div>
+          <h2>Warehouse Barcode Checker</h2>
+          <p>Walk around the warehouse and verify barcode validity without loading onto a truck.</p>
+        </div>
+      </div>
+
+      <div class="panel">
+        <label for="verifyBarcodeInput">Scan / Type Barcode to Check</label>
+        <div class="barcode-entry" style="margin-top: 8px;">
+          <input id="verifyBarcodeInput" type="text" autocomplete="off" placeholder="Scan barcode in warehouse...">
+          <button id="verifyBarcodeButton" class="primary-button">Verify Barcode</button>
+        </div>
+
+        <div id="verifyResult" class="scan-result empty" style="margin-top: 16px;">
+          <div class="result-icon">⌕</div>
+          <h3>Ready to Verify</h3>
+          <p>Scan any barcode to check if it exists in the Product Master.</p>
+        </div>
+      </div>
+    </section>
+
     <section id="history" class="page-section">
       <div class="page-heading">
         <div>
@@ -263,7 +286,7 @@
                 <th>Barcode</th>
                 <th>Product</th>
                 <th>Cases</th>
-                <th>Qty</th>
+                <th>Qty (Units)</th>
                 <th>Status</th>
                 <th>Loaded By</th>
               </tr>
@@ -274,7 +297,6 @@
       </div>
     </section>
 
-    <!-- PRODUCTS -->
     <section id="products" class="page-section">
       <div class="page-heading">
         <div>
@@ -317,6 +339,7 @@
                 <th>Product Description</th>
                 <th>Customer</th>
                 <th>Pack Size</th>
+                <th>Units/Case</th>
                 <th>Cases/Pallet</th>
                 <th>Pallet Type</th>
               </tr>
@@ -327,7 +350,6 @@
       </div>
     </section>
 
-    <!-- PROBLEMS -->
     <section id="problems" class="page-section">
       <div class="page-heading">
         <div>
@@ -359,7 +381,6 @@
       </div>
     </section>
 
-    <!-- REPORTS -->
     <section id="reports" class="page-section">
       <div class="page-heading">
         <div>
@@ -385,7 +406,7 @@
                 <th>Customer</th>
                 <th>Pallets</th>
                 <th>Cases</th>
-                <th>Quantity</th>
+                <th>Quantity (Units)</th>
               </tr>
             </thead>
             <tbody id="customerReportBody"></tbody>
@@ -394,7 +415,6 @@
       </div>
     </section>
 
-    <!-- SETTINGS -->
     <section id="settings" class="page-section">
       <div class="page-heading">
         <div>
@@ -431,7 +451,6 @@
     </section>
   </main>
 
-  <!-- SESSION MODAL -->
   <div id="sessionModal" class="modal hidden">
     <div class="modal-card">
       <div class="modal-header">
@@ -476,7 +495,6 @@
     </div>
   </div>
 
-  <!-- PROBLEM MODAL -->
   <div id="problemModal" class="modal hidden">
     <div class="modal-card">
       <div class="modal-header">
