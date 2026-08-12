@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#172033">
+  <title>Dispatch Barcode Tracker</title>
+  <link rel="stylesheet" href="style.css">
+
+  <!-- SheetJS: reads Excel .xlsx/.xls files in the browser -->
+  <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+
+  <!-- html5-qrcode: browser camera barcode/QR scanner -->
+  <script src="https://unpkg.com/html5-qrcode" defer></script>
+</head>
+<body>
+  <header class="topbar">
+    <div>
+      <h1>Dispatch Barcode Tracker</h1>
+      <p class="subtitle">Pallet loading & barcode verification</p>
+    </div>
+    <button id="menuButton" class="icon-button" aria-label="Open menu">☰</button>
+  </header>
+
+  <div id="appNotice" class="app-notice hidden"></div>
+
+  <nav id="mainNav" class="nav">
+    <button class="nav-button active" data-section="dashboard">Dashboard</button>
+    <button class="nav-button" data-section="scan">Scan Pallet</button>
+    <button class="nav-button" data-section="history">Loading History</button>
+    <button class="nav-button" data-section="products">Product Master</button>
+    <button class="nav-button" data-section="problems">Barcode Problems</button>
+    <button class="nav-button" data-section="reports">Reports</button>
+    <button class="nav-button" data-section="settings">Settings</button>
+  </nav>
+
+  <main class="container">
+    <!-- DASHBOARD -->
+    <section id="dashboard" class="page-section active">
+      <div class="page-heading">
+        <div>
+          <h2>Dashboard</h2>
+          <p>Overview of today's dispatch loading.</p>
+        </div>
+        <button id="dashboardScanButton" class="primary-button">Scan Pallet</button>
+      </div>
+
+      <div class="stat-grid">
+        <article class="stat-card">
+          <span>Pallets Loaded</span>
+          <strong id="statPallets">0</strong>
+        </article>
+        <article class="stat-card success-card">
+          <span>Successful Scans</span>
+          <strong id="statValid">0</strong>
+        </article>
+        <article class="stat-card error-card">
+          <span>Barcode Errors</span>
+          <strong id="statErrors">0</strong>
+        </article>
+        <article class="stat-card warning-card">
+          <span>Duplicate Scans</span>
+          <strong id="statDuplicates">0</strong>
+        </article>
+        <article class="stat-card">
+          <span>Customers</span>
+          <strong id="statCustomers">0</strong>
+        </article>
+        <article class="stat-card">
+          <span>Cases Loaded</span>
+          <strong id="statCases">0</strong>
+        </article>
+      </div>
+
+      <div id="problemAlert" class="alert alert-warning hidden"></div>
+
+      <div class="panel">
+        <div class="panel-header">
+          <div>
+            <h3>Current Loading Session</h3>
+            <p id="dashboardSessionText">No active session.</p>
+          </div>
+          <span id="sessionBadge" class="badge badge-neutral">NO SESSION</span>
+        </div>
+        <div id="sessionSummary" class="session-summary"></div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-header">
+          <div>
+            <h3>Recent Loading</h3>
+            <p>Latest pallet activity.</p>
+          </div>
+          <button class="secondary-button" data-go="history">View All</button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Time</th>
+                <th>Truck</th>
+                <th>Customer</th>
+                <th>Barcode</th>
+                <th>Product</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="recentLoadingBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- SCAN -->
+    <section id="scan" class="page-section">
+      <div class="page-heading">
+        <div>
+          <h2>Scan Pallet</h2>
+          <p>Scan a pallet barcode, validate it, then confirm loading.</p>
+        </div>
+        <span id="scanSessionBadge" class="badge badge-neutral">NO SESSION</span>
+      </div>
+
+      <div id="noSessionWarning" class="alert alert-warning">
+        Start a loading session before scanning pallets.
+        <button id="startSessionFromScan" class="link-button">Start Session</button>
+      </div>
+
+      <div class="scanner-grid">
+        <div class="panel">
+          <div class="panel-header">
+            <div>
+              <h3>Camera Scanner</h3>
+              <p>Allow camera access when your browser asks.</p>
+            </div>
+          </div>
+
+          <div id="reader" class="reader"></div>
+
+          <div class="button-row">
+            <button id="startCameraButton" class="primary-button">Start Camera</button>
+            <button id="stopCameraButton" class="secondary-button" disabled>Stop Camera</button>
+          </div>
+
+          <p class="help-text">
+            Camera scanning usually requires HTTPS or localhost. If the camera is unavailable,
+            use the manual field or a USB/Bluetooth scanner.
+          </p>
+        </div>
+
+        <div class="panel">
+          <h3>Manual / Handheld Scanner</h3>
+          <p class="help-text">
+            A handheld scanner that behaves like a keyboard can scan directly into this field.
+            Pressing Enter will validate it.
+          </p>
+
+          <label for="barcodeInput">Pallet Barcode</label>
+          <div class="barcode-entry">
+            <input id="barcodeInput" type="text" autocomplete="off" inputmode="text"
+                   placeholder="Scan or type barcode..." autofocus>
+            <button id="checkBarcodeButton" class="primary-button">Check</button>
+          </div>
+
+          <div class="quick-test">
+            <button id="demoValidButton" class="small-button">Test Valid Barcode</button>
+            <button id="demoInvalidButton" class="small-button">Test Invalid Barcode</button>
+          </div>
+
+          <div id="scanResult" class="scan-result empty">
+            <div class="result-icon">⌕</div>
+            <h3>Ready to Scan</h3>
+            <p>Scan or enter a pallet barcode.</p>
+          </div>
+        </div>
+      </div>
+
+      <div id="loadConfirmationPanel" class="panel hidden">
+        <div class="panel-header">
+          <div>
+            <h3>Confirm Pallet Loading</h3>
+            <p>Check the information before saving the pallet.</p>
+          </div>
+        </div>
+
+        <div id="loadProductSummary" class="product-summary"></div>
+
+        <div class="form-grid">
+          <div class="form-group">
+            <label for="loadTruck">Truck Registration</label>
+            <input id="loadTruck" type="text" placeholder="e.g. CA 123 456">
+          </div>
+          <div class="form-group">
+            <label for="loadCustomer">Customer</label>
+            <input id="loadCustomer" type="text" placeholder="Customer">
+          </div>
+          <div class="form-group">
+            <label for="loadDelivery">Delivery / Order Number</label>
+            <input id="loadDelivery" type="text" placeholder="Delivery or sales order">
+          </div>
+          <div class="form-group">
+            <label for="loadRoute">Route / Destination</label>
+            <input id="loadRoute" type="text" placeholder="Route or destination">
+          </div>
+          <div class="form-group">
+            <label for="loadCases">Cases</label>
+            <input id="loadCases" type="number" min="0" step="1" placeholder="Cases">
+          </div>
+          <div class="form-group">
+            <label for="loadQuantity">Quantity / Units</label>
+            <input id="loadQuantity" type="number" min="0" step="1" placeholder="Quantity">
+          </div>
+          <div class="form-group">
+            <label for="loadPalletType">Pallet Type</label>
+            <input id="loadPalletType" type="text" placeholder="e.g. CHEP">
+          </div>
+          <div class="form-group">
+            <label for="loadUser">Loaded By</label>
+            <input id="loadUser" type="text" placeholder="Employee name">
+          </div>
+        </div>
+
+        <div class="button-row end">
+          <button id="cancelLoadButton" class="secondary-button">Cancel</button>
+          <button id="confirmLoadButton" class="success-button">Confirm Pallet Loaded</button>
+        </div>
+      </div>
+
+      <div id="duplicatePanel" class="alert alert-warning hidden"></div>
+    </section>
+
+    <!-- HISTORY -->
+    <section id="history" class="page-section">
+      <div class="page-heading">
+        <div>
+          <h2>Loading History</h2>
+          <p>Search and review pallet loading records.</p>
+        </div>
+        <button id="exportHistoryButton" class="primary-button">Export CSV</button>
+      </div>
+
+      <div class="panel">
+        <div class="filter-bar">
+          <input id="historySearch" type="search" placeholder="Search barcode, product, customer, truck, delivery...">
+          <select id="historyStatusFilter">
+            <option value="ALL">All</option>
+            <option value="LOADED">Loaded</option>
+            <option value="ERROR">Errors</option>
+            <option value="DUPLICATE">Duplicates</option>
+          </select>
+          <input id="historyDateFilter" type="date">
+        </div>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Time</th>
+                <th>Truck</th>
+                <th>Customer</th>
+                <th>Delivery</th>
+                <th>Barcode</th>
+                <th>Product</th>
+                <th>Cases</th>
+                <th>Qty</th>
+                <th>Status</th>
+                <th>Loaded By</th>
+              </tr>
+            </thead>
+            <tbody id="historyBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- PRODUCTS -->
+    <section id="products" class="page-section">
+      <div class="page-heading">
+        <div>
+          <h2>Product Master</h2>
+          <p>Products and barcodes imported from Excel.</p>
+        </div>
+        <div class="button-row">
+          <button id="loadDemoDataButton" class="secondary-button">Load Demo Data</button>
+          <button id="importExcelButton" class="primary-button">Import Excel</button>
+          <input id="excelFileInput" type="file" accept=".xlsx,.xls,.csv" hidden>
+        </div>
+      </div>
+
+      <div class="stat-grid compact">
+        <article class="stat-card">
+          <span>Products Loaded</span>
+          <strong id="productCount">0</strong>
+        </article>
+        <article class="stat-card">
+          <span>Unique Barcodes</span>
+          <strong id="uniqueBarcodeCount">0</strong>
+        </article>
+      </div>
+
+      <div id="excelStatus" class="alert alert-info">
+        No product master imported yet. Import your Excel file to begin.
+      </div>
+
+      <div class="panel">
+        <div class="filter-bar">
+          <input id="productSearch" type="search" placeholder="Search barcode, product code, product, customer...">
+        </div>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Barcode</th>
+                <th>Product Code</th>
+                <th>Product Description</th>
+                <th>Customer</th>
+                <th>Pack Size</th>
+                <th>Cases/Pallet</th>
+                <th>Pallet Type</th>
+              </tr>
+            </thead>
+            <tbody id="productBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- PROBLEMS -->
+    <section id="problems" class="page-section">
+      <div class="page-heading">
+        <div>
+          <h2>Barcode Problems</h2>
+          <p>Record barcode issues reported during loading.</p>
+        </div>
+        <button id="exportProblemsButton" class="primary-button">Export Problems</button>
+      </div>
+
+      <div class="panel">
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Time</th>
+                <th>Barcode</th>
+                <th>Product</th>
+                <th>Problem</th>
+                <th>Comment</th>
+                <th>Reported By</th>
+                <th>Status</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="problemBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- REPORTS -->
+    <section id="reports" class="page-section">
+      <div class="page-heading">
+        <div>
+          <h2>Reports</h2>
+          <p>Daily dispatch summary and customer breakdown.</p>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="form-grid">
+          <div class="form-group">
+            <label for="reportDate">Report Date</label>
+            <input id="reportDate" type="date">
+          </div>
+        </div>
+
+        <div id="dailyReport" class="report-grid"></div>
+        <h3>Customer Summary</h3>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Customer</th>
+                <th>Pallets</th>
+                <th>Cases</th>
+                <th>Quantity</th>
+              </tr>
+            </thead>
+            <tbody id="customerReportBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- SETTINGS -->
+    <section id="settings" class="page-section">
+      <div class="page-heading">
+        <div>
+          <h2>Settings</h2>
+          <p>Manage local data and application preferences.</p>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h3>Local Storage</h3>
+        <p class="help-text">
+          This version stores loading records, barcode problems, the product master,
+          and session information in this browser on this device.
+        </p>
+
+        <div class="button-row">
+          <button id="exportAllButton" class="secondary-button">Export All Data</button>
+          <button id="clearRecordsButton" class="danger-button">Clear Loading Records</button>
+          <button id="clearAllButton" class="danger-button">Clear All Local Data</button>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h3>About This Version</h3>
+        <p>
+          <strong>Dispatch Barcode Tracker v1.0</strong>
+        </p>
+        <p class="help-text">
+          This is a local-first prototype built with HTML, CSS and JavaScript.
+          It does not use a server or shared database. For multiple devices to
+          synchronize in real time, a backend/database will be needed in a future version.
+        </p>
+      </div>
+    </section>
+  </main>
+
+  <!-- SESSION MODAL -->
+  <div id="sessionModal" class="modal hidden">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div>
+          <h2>Start Loading Session</h2>
+          <p>Enter the information that applies to this truck/load.</p>
+        </div>
+        <button id="closeSessionModal" class="icon-button">×</button>
+      </div>
+
+      <div class="form-grid">
+        <div class="form-group">
+          <label for="sessionName">Session Name</label>
+          <input id="sessionName" type="text" placeholder="e.g. Night Shift">
+        </div>
+        <div class="form-group">
+          <label for="sessionUser">Employee / User</label>
+          <input id="sessionUser" type="text" placeholder="Your name">
+        </div>
+        <div class="form-group">
+          <label for="sessionTruck">Truck Registration</label>
+          <input id="sessionTruck" type="text" placeholder="Truck registration">
+        </div>
+        <div class="form-group">
+          <label for="sessionCustomer">Customer</label>
+          <input id="sessionCustomer" type="text" placeholder="Customer">
+        </div>
+        <div class="form-group">
+          <label for="sessionDelivery">Delivery / Order Number</label>
+          <input id="sessionDelivery" type="text" placeholder="Delivery/order number">
+        </div>
+        <div class="form-group">
+          <label for="sessionRoute">Route / Destination</label>
+          <input id="sessionRoute" type="text" placeholder="Route/destination">
+        </div>
+      </div>
+
+      <div class="button-row end">
+        <button id="cancelSessionButton" class="secondary-button">Cancel</button>
+        <button id="startSessionButton" class="primary-button">Start Loading</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- PROBLEM MODAL -->
+  <div id="problemModal" class="modal hidden">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div>
+          <h2>Report Barcode Problem</h2>
+          <p>Record the issue so it can be investigated.</p>
+        </div>
+        <button id="closeProblemModal" class="icon-button">×</button>
+      </div>
+
+      <div id="problemBarcodePreview" class="barcode-preview"></div>
+
+      <div class="form-group">
+        <label for="problemType">Problem</label>
+        <select id="problemType">
+          <option value="Barcode not scanning">Barcode not scanning</option>
+          <option value="Barcode not found">Barcode not found</option>
+          <option value="Wrong product linked">Wrong product linked</option>
+          <option value="Duplicate barcode">Duplicate barcode</option>
+          <option value="Damaged barcode">Damaged barcode</option>
+          <option value="Incorrect barcode on packaging">Incorrect barcode on packaging</option>
+          <option value="Other">Other</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label for="problemComment">Comment</label>
+        <textarea id="problemComment" rows="4" placeholder="Describe what happened..."></textarea>
+      </div>
+
+      <div class="form-group">
+        <label for="problemReporter">Reported By</label>
+        <input id="problemReporter" type="text" placeholder="Employee name">
+      </div>
+
+      <div class="button-row end">
+        <button id="cancelProblemButton" class="secondary-button">Cancel</button>
+        <button id="saveProblemButton" class="danger-button">Save Problem</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast" class="toast hidden"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>
