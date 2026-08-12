@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -11,6 +12,7 @@
 
   <script src="https://unpkg.com/html5-qrcode" defer></script>
 </head>
+
 <body>
   <header class="topbar">
     <div>
@@ -123,7 +125,7 @@
 
       <div id="noSessionWarning" class="alert alert-warning">
         Start a loading session before scanning pallets to load on a truck.
-        <button id="startSessionFromScan" class="link-button">Start Session</button> or 
+        <button id="startSessionFromScan" class="link-button">Start Session</button> or
         <button class="link-button" data-go="verify">Verify Barcodes without Loading</button>
       </div>
 
@@ -159,7 +161,7 @@
           <label for="barcodeInput">Pallet Barcode</label>
           <div class="barcode-entry">
             <input id="barcodeInput" type="text" autocomplete="off" inputmode="text"
-                   placeholder="Scan or type barcode..." autofocus>
+              placeholder="Scan or type barcode..." autofocus>
             <button id="checkBarcodeButton" class="primary-button">Check & Load</button>
           </div>
 
@@ -541,4 +543,5 @@
 
   <script src="app.js"></script>
 </body>
+
 </html>
