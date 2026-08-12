@@ -352,7 +352,6 @@ function findColumn(row, possibleNames) {
     if (exact) return exact;
   }
 
-  // Fallback match by header substring
   for (const key of keys) {
     const normalized = normalizeHeader(key);
 
@@ -376,7 +375,6 @@ function normalizeProductRow(row) {
     "Code Number"
   ]);
 
-  // Dynamic fallback: look across all columns for numeric digits
   if (!barcodeColumn) {
     const keys = Object.keys(row);
     barcodeColumn = keys.find(k => {
@@ -465,8 +463,7 @@ function checkBarcode() {
   }
 
   currentScannedBarcode = barcode;
-  const product = getProductByBarcode(barcode);
-  currentScannedProduct = product;
+  let product = getProductByBarcode(barcode);
 
   const previousLoads = loadingRecords.filter(
     record =>
@@ -479,12 +476,23 @@ function checkBarcode() {
     return;
   }
 
+  // If barcode is not in Product Master, process as an Ad-Hoc / Dynamic item
   if (!product) {
-    showInvalidResult(barcode);
-    return;
+    product = {
+      barcode: barcode,
+      productCode: "",
+      description: "",
+      customer: currentSession.customer || "",
+      packSize: "",
+      casesPerPallet: "",
+      palletType: "Standard"
+    };
+    currentScannedProduct = product;
+    showAdHocResult(product);
+  } else {
+    currentScannedProduct = product;
+    showValidResult(product);
   }
-
-  showValidResult(product);
 }
 
 function showValidResult(product) {
@@ -496,28 +504,21 @@ function showValidResult(product) {
     <p><strong>Product:</strong> ${escapeHtml(displayValue(product.description))}</p>
     <p><strong>Product Code:</strong> ${escapeHtml(displayValue(product.productCode))}</p>
     <p><strong>Customer:</strong> ${escapeHtml(displayValue(product.customer))}</p>
-    <p><strong>Barcode Quality:</strong> PASS</p>
   `;
 
-  showLoadConfirmation(product);
+  showLoadConfirmation(product, false);
 }
 
-function showInvalidResult(barcode) {
-  $("scanResult").className = "scan-result error";
+function showAdHocResult(product) {
+  $("scanResult").className = "scan-result warning";
   $("scanResult").innerHTML = `
-    <div class="result-icon">✕</div>
-    <h3>BARCODE NOT FOUND</h3>
-    <p><strong>Barcode:</strong> ${escapeHtml(barcode)}</p>
-    <p>This barcode does not exist in the imported product master.</p>
-    <p><strong>DO NOT LOAD THIS PALLET</strong></p>
-    <button id="reportUnknownButton" class="danger-button">Report Barcode Problem</button>
+    <div class="result-icon">ℹ</div>
+    <h3>UNLISTED BARCODE</h3>
+    <p><strong>Barcode:</strong> ${escapeHtml(product.barcode)}</p>
+    <p>This barcode is not in the master list. Enter product details below to load it.</p>
   `;
 
-  $("reportUnknownButton").addEventListener("click", () => {
-    openProblemModal(barcode, null);
-  });
-
-  hideLoadConfirmation();
+  showLoadConfirmation(product, true);
 }
 
 function showDuplicateResult(barcode, previousLoads) {
@@ -559,7 +560,7 @@ function hideLoadConfirmation() {
   $("duplicatePanel").classList.add("hidden");
 }
 
-function showLoadConfirmation(product) {
+function showLoadConfirmation(product, isAdHoc = false) {
   $("duplicatePanel").classList.add("hidden");
   $("loadConfirmationPanel").classList.remove("hidden");
 
@@ -572,16 +573,33 @@ function showLoadConfirmation(product) {
   $("loadPalletType").value = product.palletType || "";
   $("loadUser").value = currentSession?.user || "";
 
-  $("loadProductSummary").innerHTML = `
-    <div class="summary-item"><small>Barcode</small><strong>${escapeHtml(product.barcode)}</strong></div>
-    <div class="summary-item"><small>Product Code</small><strong>${escapeHtml(displayValue(product.productCode))}</strong></div>
-    <div class="summary-item"><small>Product</small><strong>${escapeHtml(displayValue(product.description))}</strong></div>
-    <div class="summary-item"><small>Customer</small><strong>${escapeHtml(displayValue(product.customer))}</strong></div>
-    <div class="summary-item"><small>Pack Size</small><strong>${escapeHtml(displayValue(product.packSize))}</strong></div>
-    <div class="summary-item"><small>Cases/Pallet</small><strong>${escapeHtml(displayValue(product.casesPerPallet))}</strong></div>
-  `;
+  if (isAdHoc) {
+    $("loadProductSummary").innerHTML = `
+      <div class="summary-item"><small>Barcode</small><strong>${escapeHtml(product.barcode)}</strong></div>
+      <div class="form-group" style="margin-top: 10px;">
+        <label for="adHocDescription"><strong>Product Description *</strong></label>
+        <input id="adHocDescription" type="text" placeholder="Enter product name / description" value="">
+      </div>
+      <div class="form-group">
+        <label for="adHocCode">Product Code (Optional)</label>
+        <input id="adHocCode" type="text" placeholder="SKU or Item Code" value="">
+      </div>
+    `;
+    setTimeout(() => $("adHocDescription")?.focus(), 100);
+  } else {
+    $("loadProductSummary").innerHTML = `
+      <div class="summary-item"><small>Barcode</small><strong>${escapeHtml(product.barcode)}</strong></div>
+      <div class="summary-item"><small>Product Code</small><strong>${escapeHtml(displayValue(product.productCode))}</strong></div>
+      <div class="summary-item"><small>Product</small><strong>${escapeHtml(displayValue(product.description))}</strong></div>
+      <div class="summary-item"><small>Customer</small><strong>${escapeHtml(displayValue(product.customer))}</strong></div>
+      <div class="summary-item"><small>Pack Size</small><strong>${escapeHtml(displayValue(product.packSize))}</strong></div>
+      <div class="summary-item"><small>Cases/Pallet</small><strong>${escapeHtml(displayValue(product.casesPerPallet))}</strong></div>
+    `;
+  }
 
-  $("loadTruck").focus();
+  if (!isAdHoc) {
+    $("loadTruck").focus();
+  }
 }
 
 function confirmLoad() {
@@ -600,8 +618,25 @@ function confirmLoad() {
   const delivery = $("loadDelivery").value.trim();
   const loadedBy = $("loadUser").value.trim();
 
+  const adHocDescInput = $("adHocDescription");
+  const adHocCodeInput = $("adHocCode");
+
+  const productDescription = adHocDescInput
+    ? adHocDescInput.value.trim()
+    : currentScannedProduct.description;
+
+  const productCode = adHocCodeInput
+    ? adHocCodeInput.value.trim()
+    : currentScannedProduct.productCode;
+
   if (!truck || !customer || !delivery || !loadedBy) {
-    showToast("Truck, customer, delivery and loaded-by fields are required.", "warning");
+    showToast("Truck, customer, delivery, and loaded-by fields are required.", "warning");
+    return;
+  }
+
+  if (!productDescription) {
+    showToast("Please enter a product description.", "warning");
+    if (adHocDescInput) adHocDescInput.focus();
     return;
   }
 
@@ -631,15 +666,29 @@ function confirmLoad() {
     delivery,
     route: $("loadRoute").value.trim(),
     barcode: currentScannedBarcode,
-    productCode: currentScannedProduct.productCode,
-    product: currentScannedProduct.description,
-    packSize: currentScannedProduct.packSize,
+    productCode: productCode,
+    product: productDescription,
+    packSize: currentScannedProduct.packSize || "",
     cases: numberOrZero($("loadCases").value),
     quantity: numberOrZero($("loadQuantity").value),
     palletType: $("loadPalletType").value.trim(),
     status: "LOADED",
     loadedBy
   };
+
+  // Remember newly scanned products in the product list for future scans
+  if (!getProductByBarcode(currentScannedBarcode)) {
+    products.push({
+      barcode: currentScannedBarcode,
+      productCode: productCode,
+      description: productDescription,
+      customer: customer,
+      casesPerPallet: $("loadCases").value,
+      packSize: "",
+      palletType: $("loadPalletType").value.trim()
+    });
+    saveStorage(STORAGE_KEYS.products, products);
+  }
 
   loadingRecords.push(record);
   saveStorage(STORAGE_KEYS.loading, loadingRecords);
@@ -1238,7 +1287,7 @@ function clearAllData() {
   updateSessionUI();
 
   $("excelStatus").textContent =
-    "All local data cleared. Import an Excel file to begin.";
+    "All local data cleared. Import an Excel file or scan directly to begin.";
   $("excelStatus").className = "alert alert-info";
 
   showToast("All local data cleared.", "success");
@@ -1344,6 +1393,7 @@ document.addEventListener("DOMContentLoaded", () => {
   updateDashboard();
   updateSessionUI();
 
+  // Warn if user leaves while camera is active
   window.addEventListener("beforeunload", () => {
     if (scannerRunning) {
       try {
