@@ -510,6 +510,24 @@
     if ($("duplicatePanel")) $("duplicatePanel").classList.add("hidden");
   }
 
+  function updateCalculatedQuantity() {
+    if (!$("loadCases") || !$("loadQuantity")) return;
+
+    const cases = numberOrZero($("loadCases").value);
+    
+    // Extract numerical units per case multiplier if available in packSize (e.g. "24x100g")
+    let unitsPerCase = 1;
+    if (currentScannedProduct && currentScannedProduct.packSize) {
+      const match = String(currentScannedProduct.packSize).match(/^(\d+)/);
+      if (match) {
+        unitsPerCase = parseInt(match[1], 10) || 1;
+      }
+    }
+
+    const calculatedQuantity = cases * unitsPerCase;
+    $("loadQuantity").value = calculatedQuantity > 0 ? calculatedQuantity : "";
+  }
+
   function showLoadConfirmation(product) {
     if ($("duplicatePanel")) $("duplicatePanel").classList.add("hidden");
     if ($("loadConfirmationPanel")) $("loadConfirmationPanel").classList.remove("hidden");
@@ -519,7 +537,10 @@
     if ($("loadDelivery")) $("loadDelivery").value = currentSession?.delivery || "";
     if ($("loadRoute")) $("loadRoute").value = currentSession?.route || "";
     if ($("loadCases")) $("loadCases").value = product.casesPerPallet || "";
-    if ($("loadQuantity")) $("loadQuantity").value = "";
+    
+    // Auto-calculate initial quantity based on cases and pack size
+    updateCalculatedQuantity();
+
     if ($("loadPalletType")) $("loadPalletType").value = product.palletType || "";
     if ($("loadUser")) $("loadUser").value = currentSession?.user || "";
 
@@ -900,6 +921,12 @@
     if ($("closeProblemModal")) $("closeProblemModal").addEventListener("click", closeProblemModal);
     if ($("cancelProblemButton")) $("cancelProblemButton").addEventListener("click", closeProblemModal);
     if ($("saveProblemButton")) $("saveProblemButton").addEventListener("click", saveProblem);
+
+    // Auto-calculate units/quantity when cases input changes
+    if ($("loadCases")) {
+      $("loadCases").addEventListener("input", updateCalculatedQuantity);
+      $("loadCases").addEventListener("change", updateCalculatedQuantity);
+    }
 
     // Initial Renders
     renderProducts();
