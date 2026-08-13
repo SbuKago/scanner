@@ -78,7 +78,7 @@ button:disabled {
 }
 
 .icon-button:hover {
-  background: rgba(255,255,255,0.1);
+  background: rgba(255, 255, 255, 0.1);
 }
 
 .nav {
@@ -462,25 +462,37 @@ textarea:focus {
   margin: 5px 0;
 }
 
+/* Product Summary Grid & Card Layout */
 .product-summary {
   background: var(--grey-50);
   border: 1px solid var(--grey-200);
   border-radius: 10px;
-  padding: 16px;
-  margin-bottom: 18px;
+  padding: 20px;
+  margin-bottom: 24px;
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 12px;
+  gap: 20px 16px;
 }
 
+.summary-item {
+  display: flex;
+  flex-direction: column;
+}
+
+.summary-item .label,
 .summary-item small {
+  font-size: 0.82rem;
+  font-weight: 600;
   color: var(--grey-600);
-  display: block;
+  margin-bottom: 4px;
 }
 
+.summary-item .value,
 .summary-item strong {
-  display: block;
-  margin-top: 3px;
+  font-size: 0.98rem;
+  font-weight: 700;
+  color: var(--grey-800);
+  word-break: break-word;
 }
 
 .form-grid {
@@ -585,7 +597,7 @@ tbody tr:hover {
   background: white;
   border-radius: 14px;
   padding: 22px;
-  box-shadow: 0 20px 60px rgba(0,0,0,0.25);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
 }
 
 .modal-header {
@@ -623,7 +635,7 @@ tbody tr:hover {
   bottom: 20px;
   max-width: 360px;
   padding: 13px 16px;
-  border-radius: 9px;
+  border-radius: 99px;
   color: white;
   background: var(--navy);
   box-shadow: var(--shadow);
@@ -648,6 +660,7 @@ tbody tr:hover {
   padding: 30px;
 }
 
+/* Responsive Media Queries */
 @media (max-width: 1100px) {
   .stat-grid {
     grid-template-columns: repeat(3, 1fr);
@@ -703,6 +716,7 @@ tbody tr:hover {
 }
 
 @media (max-width: 560px) {
+
   .stat-grid,
   .stat-grid.compact,
   .form-grid,
@@ -719,7 +733,7 @@ tbody tr:hover {
     grid-template-columns: 1fr;
   }
 
-  .button-row > button {
+  .button-row>button {
     flex: 1 1 auto;
   }
 
