@@ -118,9 +118,7 @@
     { productCode: "4108AX", outerBarcode: "6009710723132", barcode: "6009710723135", product: "Lay's KC Rib-Eye & Mushroom 30 g", packSize: "30g", sellBy: "N/A", bb: "126", casesPerPallet: "56", unitsPerCase: "48", unitsPerOuter: "48 / Outer Case" }
   ];
 
-  let products = FULL_PRODUCT_MASTER;
-  saveStorage(STORAGE_KEYS.products, products);
-
+  let products = loadStorage(STORAGE_KEYS.products, FULL_PRODUCT_MASTER);
   let loadingRecords = loadStorage(STORAGE_KEYS.loading, []);
   let barcodeProblems = loadStorage(STORAGE_KEYS.problems, []);
   let currentSession = loadStorage(STORAGE_KEYS.session, null);
@@ -255,7 +253,7 @@
     }
 
     if (!currentSession) {
-      $("sessionModal").classList.remove("hidden");
+      if ($("sessionModal")) $("sessionModal").classList.remove("hidden");
       return;
     }
 
@@ -285,6 +283,7 @@
 
   function showValidResult(product, scannedCode) {
     const res = $("scanResult");
+    if (!res) return;
     res.className = "scan-result success";
     const outerBarcode = getEffectiveOuterBarcode(product);
     const desc = getProductDescription(product);
@@ -304,6 +303,7 @@
 
   function showInvalidResult(scannedCode) {
     const res = $("scanResult");
+    if (!res) return;
     res.className = "scan-result error";
     res.innerHTML = `
       <div class="result-icon">✕</div>
@@ -316,6 +316,7 @@
 
   function showDuplicateResult(scannedCode, duplicates) {
     const res = $("scanResult");
+    if (!res) return;
     res.className = "scan-result warning";
     res.innerHTML = `
       <div class="result-icon">⚠</div>
@@ -540,6 +541,40 @@
     }
   }
 
+  // Clear History Functionality
+  function clearHistory() {
+    if (confirm("Are you sure you want to clear all loading records and reported barcode problems?")) {
+      loadingRecords = [];
+      barcodeProblems = [];
+      saveStorage(STORAGE_KEYS.loading, loadingRecords);
+      saveStorage(STORAGE_KEYS.problems, barcodeProblems);
+      renderLoadingHistory();
+      renderProblems();
+      updateDashboard();
+      showToast("Loading history and problems cleared successfully.", "success");
+    }
+  }
+
+  // Clear Cache & Reset Master Data Functionality
+  function clearCacheAndReset() {
+    if (confirm("Are you sure you want to reset all app cache and data to factory defaults?")) {
+      localStorage.clear();
+      products = [...FULL_PRODUCT_MASTER];
+      saveStorage(STORAGE_KEYS.products, products);
+      loadingRecords = [];
+      barcodeProblems = [];
+      currentSession = null;
+      
+      updateSessionUI();
+      renderProducts();
+      renderLoadingHistory();
+      renderProblems();
+      updateDashboard();
+      
+      showToast("App cache cleared and system restored to default.", "success");
+    }
+  }
+
   document.addEventListener("DOMContentLoaded", () => {
     // Navigation listeners
     document.querySelectorAll(".nav-button").forEach(btn => {
@@ -598,6 +633,17 @@
     if ($("closeSessionModal")) $("closeSessionModal").addEventListener("click", () => {
       if ($("sessionModal")) $("sessionModal").classList.add("hidden");
     });
+
+    // Settings Action Buttons (Clear History & Cache)
+    if ($("clearHistoryButton")) {
+      $("clearHistoryButton").addEventListener("click", clearHistory);
+    }
+    if ($("clearCacheButton")) {
+      $("clearCacheButton").addEventListener("click", clearCacheAndReset);
+    }
+    if ($("resetDataButton")) {
+      $("resetDataButton").addEventListener("click", clearCacheAndReset);
+    }
 
     if ($("barcodeInput")) {
       $("barcodeInput").addEventListener("keypress", (e) => {
