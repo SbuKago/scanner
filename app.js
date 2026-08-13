@@ -657,7 +657,28 @@
         casesInput.addEventListener(evt, recalculateUnits);
       });
     }
-
+function startCamera() {
+  Html5Qrcode.getCameras().then(devices => {
+    if (devices && devices.length) {
+      // Pick the last camera in the list (usually the main back camera)
+      const cameraId = devices[devices.length - 1].id;
+      
+      html5QrCode.start(
+        cameraId,
+        { fps: 10, qrbox: { width: 250, height: 150 } },
+        (decodedText) => {
+          document.getElementById("barcodeInput").value = decodedText;
+          stopCamera();
+          if (typeof checkBarcode === "function") checkBarcode();
+        }
+      );
+    } else {
+      alert("No cameras detected on this device.");
+    }
+  }).catch(err => {
+    console.error("Camera enumeration error:", err);
+  });
+}
     updateSessionUI();
     renderProducts();
     renderLoadingHistory();
