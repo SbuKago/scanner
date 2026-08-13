@@ -1,11 +1,6 @@
 (function () {
   "use strict";
 
-  /*
-    Dispatch Barcode Tracker
-    Local-first Vanilla JavaScript.
-  */
-
   const STORAGE_KEYS = {
     products: "dispatch_product_master",
     loading: "dispatch_loading_records",
@@ -13,51 +8,81 @@
     session: "dispatch_session"
   };
 
-  // Default demo dataset loaded automatically if empty
-  const DEFAULT_DEMO_PRODUCTS = [
-    {
-      barcode: "6001234567890",
-      productCode: "CC001",
-      description: "Tomato Corn Crunch",
-      customer: "Woolworths",
-      packSize: "22g",
-      casesPerPallet: "20",
-      palletType: "CHEP"
-    },
-    {
-      barcode: "6001234567891",
-      productCode: "CC002",
-      description: "Cheese Corn Crunch",
-      customer: "Woolworths",
-      packSize: "22g",
-      casesPerPallet: "20",
-      palletType: "CHEP"
-    },
-    {
-      barcode: "6001234567892",
-      productCode: "CC003",
-      description: "Jalapeno Corn Crunch",
-      customer: "Shoprite",
-      packSize: "22g",
-      casesPerPallet: "20",
-      palletType: "CHEP"
-    },
-    {
-      barcode: "0001234567895",
-      productCode: "HS001",
-      description: "Caramel HOP Strips",
-      customer: "Checkers",
-      packSize: "22g",
-      casesPerPallet: "20",
-      palletType: "CHEP"
-    }
+  const AUTHORIZED_USERS = ["Sibusiso Makhonjwa", "Afection", "Boitumelo"];
+
+  const FULL_PRODUCT_MASTER = [
+    { productCode: "413817", outerBarcode: "#N/A", barcode: "6009211225657", description: "Lentil & Quinoa Pop Chips – Creamy Cheddar", packSize: "85 g", sellBy: "112", bbDate: "98", casesPerPallet: "32", unitsPerCase: "12", unitsPerOuter: "#N/A" },
+    { productCode: "413807", outerBarcode: "#N/A", barcode: "6009207314334", description: "Lentil & Quinoa Pop Chips – Creamy Cheddar", packSize: "20 g", sellBy: "112", bbDate: "98", casesPerPallet: "70", unitsPerCase: "20", unitsPerOuter: "#N/A" },
+    { productCode: "413816", outerBarcode: "#N/A", barcode: "6009211225640", description: "Lentil & Quinoa Pop Chips – BBQ", packSize: "85 g", sellBy: "112", bbDate: "98", casesPerPallet: "32", unitsPerCase: "12", unitsPerOuter: "#N/A" },
+    { productCode: "413808", outerBarcode: "#N/A", barcode: "6009207314341", description: "Lentil & Quinoa Pop Chips – BBQ", packSize: "20 g", sellBy: "112", bbDate: "98", casesPerPallet: "70", unitsPerCase: "20", unitsPerOuter: "#N/A" },
+    { productCode: "413819", outerBarcode: "#N/A", barcode: "6009223668152", description: "Lentil & Quinoa Pop Chips – Sour Cream and Chives", packSize: "85 g", sellBy: "112", bbDate: "98", casesPerPallet: "32", unitsPerCase: "12", unitsPerOuter: "#N/A" },
+    { productCode: "410810", outerBarcode: "6005000288865", barcode: "6005000288865", description: "HCC Sea Salt 50g", packSize: "50g", sellBy: "112", bbDate: "71", casesPerPallet: "42", unitsPerCase: "24", unitsPerOuter: "24 / Outer Case67424" },
+    { productCode: "410808", outerBarcode: "6009184110455", barcode: "6009184110455", description: "HCC Sea Salt 125g", packSize: "125g", sellBy: "84", bbDate: "71", casesPerPallet: "20", unitsPerCase: "26", unitsPerOuter: "26 / Outer Case5420" },
+    { productCode: "410807", outerBarcode: "6009184110462", barcode: "6009184110462", description: "HCC Sea Salt & Black Pepper 125g", packSize: "125g", sellBy: "84", bbDate: "119", casesPerPallet: "20", unitsPerCase: "26", unitsPerOuter: "26 / Outer Case5420" },
+    { productCode: "410811", outerBarcode: "6005000895865", barcode: "6005000895865", description: "HCC Sea Salt & Black Pepper 50g", packSize: "50g", sellBy: "106", bbDate: "119", casesPerPallet: "42", unitsPerCase: "24", unitsPerOuter: "24 / Outer Case67424" },
+    { productCode: "410806", outerBarcode: "6009184110479", barcode: "6009184110479", description: "HCC Sour Cream & Chives 125g", packSize: "125g", sellBy: "106", bbDate: "119", casesPerPallet: "20", unitsPerCase: "26", unitsPerOuter: "26 / Outer Case5420" },
+    { productCode: "410812", outerBarcode: "6009184110486", barcode: "6009184110486", description: "HCC Rosemary & Sea Salt 125g", packSize: "125g", sellBy: "106", bbDate: "119", casesPerPallet: "20", unitsPerCase: "26", unitsPerOuter: "26 / Outer Case5420" },
+    { productCode: "410819", outerBarcode: "6009214098296", barcode: "6009214098296", description: "HCC Rottisserie Chicken 125g", packSize: "125g", sellBy: "106", bbDate: "119", casesPerPallet: "20", unitsPerCase: "26", unitsPerOuter: "26 / Outer Case5420" },
+    { productCode: "410809", outerBarcode: "6009226480089", barcode: "6009226480089", description: "HCC roast lamb & rosemary flavoured 125g", packSize: "125g", sellBy: "106", bbDate: "119", casesPerPallet: "20", unitsPerCase: "26", unitsPerOuter: "26 / Outer Case5420" },
+    { productCode: "410820", outerBarcode: "6009226451577", barcode: "6009226451577", description: "HCC sea salt & white balsamic vinegar flavoured 50g", packSize: "50g", sellBy: "106", bbDate: "119", casesPerPallet: "42", unitsPerCase: "24", unitsPerOuter: "24 / Outer Case67424" },
+    { productCode: "410802", outerBarcode: "6009226478611", barcode: "6009226478611", description: "HCC sea salt & white balsamic vinegar flavoured 125g", packSize: "125g", sellBy: "106", bbDate: "119", casesPerPallet: "20", unitsPerCase: "26", unitsPerOuter: "26 / Outer Case5420" },
+    { productCode: "410801", outerBarcode: "6009226462993", barcode: "6009226462993", description: "HCC sriracha flavoured 125g", packSize: "125g", sellBy: "106", bbDate: "119", casesPerPallet: "20", unitsPerCase: "26", unitsPerOuter: "26 / Outer Case5420" },
+    { productCode: "410827", outerBarcode: "6009245410159", barcode: "6009245410159", description: "HCC Parmesan &Truffle 125g", packSize: "125g", sellBy: "106", bbDate: "119", casesPerPallet: "20", unitsPerCase: "26", unitsPerOuter: "26 / Outer Case5420" },
+    { productCode: "410823", outerBarcode: "6009245410104", barcode: "6009245410104", description: "HCC Sweet & Sticky Chilli 50g", packSize: "50g", sellBy: "106", bbDate: "119", casesPerPallet: "42", unitsPerCase: "24", unitsPerOuter: "24 / Outer Case67424" },
+    { productCode: "410824", outerBarcode: "6009245410111", barcode: "6009245410111", description: "HCC Sweet & Sticky Chilli 125g", packSize: "125g", sellBy: "106", bbDate: "119", casesPerPallet: "20", unitsPerCase: "26", unitsPerOuter: "26 / Outer Case5420" },
+    { productCode: "410821", outerBarcode: "6009245410081", barcode: "6009245410081", description: "HCC Dijon Mustard 50g", packSize: "50g", sellBy: "106", bbDate: "119", casesPerPallet: "42", unitsPerCase: "24", unitsPerOuter: "24 / Outer Case67424" },
+    { productCode: "410822", outerBarcode: "6009245410098", barcode: "6009245410098", description: "HCC Dijon Mustard 125g", packSize: "125g", sellBy: "106", bbDate: "119", casesPerPallet: "20", unitsPerCase: "26", unitsPerOuter: "26 / Outer Case5420" },
+    { productCode: "410825", outerBarcode: "6009245410128", barcode: "6009245410128", description: "HCC Rotisserie chicken 50g", packSize: "50g", sellBy: "106", bbDate: "119", casesPerPallet: "42", unitsPerCase: "24", unitsPerOuter: "24 / Outer Case67424" },
+    { productCode: "410905", outerBarcode: "6009173755049", barcode: "6009173755049", description: "HCS Sea Salt 50g", packSize: "50g", sellBy: "106", bbDate: "119", casesPerPallet: "42", unitsPerCase: "42", unitsPerOuter: "42 / Outer Case67424" },
+    { productCode: "410907", outerBarcode: "6009173755087", barcode: "6009173755087", description: "HCS Sea Salt 125g", packSize: "125g", sellBy: "106", bbDate: "119", casesPerPallet: "42", unitsPerCase: "16", unitsPerOuter: "16 / Outer Case67424" },
+    { productCode: "410901", outerBarcode: "6009184110417", barcode: "6009184110417", description: "HCS Sea Salt & Black Pepper 125g", packSize: "125g", sellBy: "106", bbDate: "119", casesPerPallet: "42", unitsPerCase: "16", unitsPerOuter: "16 / Outer Case67424" },
+    { productCode: "410904", outerBarcode: "6009173755056", barcode: "6009173755056", description: "HCS Sour cream & Red onion 50g", packSize: "50g", sellBy: "106", bbDate: "119", casesPerPallet: "42", unitsPerCase: "42", unitsPerOuter: "42 / Outer Case67424" },
+    { productCode: "410909", outerBarcode: "6009211697836", barcode: "6009211697836", description: "HCS Sour cream & Red onion 125g", packSize: "125g", sellBy: "106", bbDate: "119", casesPerPallet: "42", unitsPerCase: "16", unitsPerOuter: "16 / Outer Case67424" },
+    { productCode: "410911", outerBarcode: "6009226451560", barcode: "6009226451560", description: "HCS sticky ribs with chilli flavoured 50g", packSize: "50g", sellBy: "106", bbDate: "119", casesPerPallet: "42", unitsPerCase: "42", unitsPerOuter: "42 / Outer Case67424" },
+    { productCode: "410913", outerBarcode: "6009226462986", barcode: "6009226462986", description: "HCS sticky ribs with chilli flavoured 125g", packSize: "125g", sellBy: "106", bbDate: "119", casesPerPallet: "42", unitsPerCase: "16", unitsPerOuter: "16 / Outer Case67424" },
+    { productCode: "410916", outerBarcode: "6009226652455", barcode: "6009226652455", description: "HCS sea salt & white balsamic vinegar flavoured 50g", packSize: "50g", sellBy: "106", bbDate: "119", casesPerPallet: "42", unitsPerCase: "42", unitsPerOuter: "42 / Outer Case67424" },
+    { productCode: "410914", outerBarcode: "6009226478628", barcode: "6009226478628", description: "HCS sea salt & white balsamic vinegar flavoured 125g", packSize: "125g", sellBy: "106", bbDate: "119", casesPerPallet: "42", unitsPerCase: "16", unitsPerOuter: "16 / Outer Case67424" },
+    { productCode: "410912", outerBarcode: "6009226451584", barcode: "6009226451584", description: "HCS Sour Cream & Jalapeno 125 g", packSize: "125g", sellBy: "106", bbDate: "119", casesPerPallet: "42", unitsPerCase: "16", unitsPerOuter: "16 / Outer Case67424" },
+    { productCode: "410612", outerBarcode: "6009223192367", barcode: "6009223192367", description: "Prawn Cocktail mix 30 g", packSize: "30 g", sellBy: "98", bbDate: "112", casesPerPallet: "30", unitsPerCase: "48", unitsPerOuter: "48 / Outer Case65304" },
+    { productCode: "410611", outerBarcode: "6009223192336", barcode: "6009223192336", description: "Prawn Cocktail mix 100 g", packSize: "100 g", sellBy: "98", bbDate: "112", casesPerPallet: "20", unitsPerCase: "20", unitsPerOuter: "20 / Outer Case54204" },
+    { productCode: "410605", outerBarcode: "6009175940368", barcode: "6009175940368", description: "Prawn Cocktail 30 g", packSize: "30 g", sellBy: "98", bbDate: "112", casesPerPallet: "30", unitsPerCase: "48", unitsPerOuter: "48 / Outer Case65304" },
+    { productCode: "410604", outerBarcode: "20024277", barcode: "20024277", description: "Prawn Cocktail 125 g", packSize: "125 g", sellBy: "98", bbDate: "112", casesPerPallet: "20", unitsPerCase: "20", unitsPerOuter: "20 / Outer Case54204" },
+    { productCode: "410607", outerBarcode: "6009175940382", barcode: "6009175940382", description: "Streaky Crackle 30 g", packSize: "30 g", sellBy: "98", bbDate: "112", casesPerPallet: "30", unitsPerCase: "48", unitsPerOuter: "48 / Outer Case65304" },
+    { productCode: "410602", outerBarcode: "6009178477823", barcode: "6009178477823", description: "Streaky Crackle 100 g", packSize: "100 g", sellBy: "98", bbDate: "112", casesPerPallet: "20", unitsPerCase: "20", unitsPerOuter: "20 / Outer Case54204" },
+    { productCode: "410606", outerBarcode: "6009175940399", barcode: "6009175940399", description: "Sweet Onion Rings 75 g", packSize: "75 g", sellBy: "98", bbDate: "112", casesPerPallet: "20", unitsPerCase: "20", unitsPerOuter: "20 / Outer Case54204" },
+    { productCode: "410603", outerBarcode: "6008000521604", barcode: "6008000521604", description: "Salt & Vinegar Onion Rings 75 g", packSize: "75 g", sellBy: "98", bbDate: "112", casesPerPallet: "20", unitsPerCase: "20", unitsPerOuter: "20 / Outer Case54204" },
+    { productCode: "410601", outerBarcode: "6009175940580", barcode: "6009175940580", description: "Potato Fries Salt & Vinegar 125 g", packSize: "125 g", sellBy: "98", bbDate: "112", casesPerPallet: "20", unitsPerCase: "20", unitsPerOuter: "20 / Outer Case54204" },
+    { productCode: "410613", outerBarcode: "6009223398301", barcode: "6009223398301", description: "Potato Fries Salt & Vinegar 30 g", packSize: "30 g", sellBy: "98", bbDate: "112", casesPerPallet: "30", unitsPerCase: "48", unitsPerOuter: "48 / Outer Case65304" },
+    { productCode: "410404", outerBarcode: "6009214098241", barcode: "6009214098241", description: "Lentil Chips Sour Cream & Chives Flavoured 40 g", packSize: "40 g", sellBy: "98", bbDate: "112", casesPerPallet: "30", unitsPerCase: "45", unitsPerOuter: "45 / Outer Case65304" },
+    { productCode: "410403", outerBarcode: "6009214098258", barcode: "6009214098258", description: "Lentil Chips Sour Cream & Chives Flavoured100 g", packSize: "100 g", sellBy: "98", bbDate: "112", casesPerPallet: "20", unitsPerCase: "20", unitsPerOuter: "20 / Outer Case54204" },
+    { productCode: "410406", outerBarcode: "6009214098197", barcode: "6009214098197", description: "Chickpea Chips Sweet Chilli Flavoured 40 g", packSize: "40 g", sellBy: "98", bbDate: "112", casesPerPallet: "30", unitsPerCase: "45", unitsPerOuter: "45 / Outer Case65304" },
+    { productCode: "410405", outerBarcode: "6009214098203", barcode: "6009214098203", description: "Chickpea Chips Sweet Chilli Flavoured 100 g", packSize: "100 g", sellBy: "98", bbDate: "112", casesPerPallet: "20", unitsPerCase: "20", unitsPerOuter: "20 / Outer Case54204" },
+    { productCode: "410407", outerBarcode: "6009223567240", barcode: "6009223567240", description: "Chickpea Chips Sea Salt & Black Pepper Flavoured 100 g", packSize: "100 g", sellBy: "98", bbDate: "112", casesPerPallet: "20", unitsPerCase: "20", unitsPerOuter: "20 / Outer Case54204" },
+    { productCode: "410402", outerBarcode: "6009214098265", barcode: "6009214098265", description: "Quinoa Chips BBQ Flavoured 40 g", packSize: "40 g", sellBy: "98", bbDate: "112", casesPerPallet: "30", unitsPerCase: "45", unitsPerOuter: "45 / Outer Case65304" },
+    { productCode: "410401", outerBarcode: "6009214098272", barcode: "6009214098272", description: "Quinoa Chips BBQ Flavoured 100 g", packSize: "100 g", sellBy: "98", bbDate: "112", casesPerPallet: "20", unitsPerCase: "20", unitsPerOuter: "20 / Outer Case54204" },
+    { productCode: "410408", outerBarcode: "6009223567257", barcode: "6009223567257", description: "Quinoa Chips Sea Salt Flavoured 100 g", packSize: "100 g", sellBy: "98", bbDate: "112", casesPerPallet: "20", unitsPerCase: "20", unitsPerOuter: "20 / Outer Case54204" },
+    { productCode: "410409", outerBarcode: "6009223567264", barcode: "6009223567264", description: "Lentil Chips Creamy Cheddar Flavoured 100 g", packSize: "100 g", sellBy: "98", bbDate: "112", casesPerPallet: "20", unitsPerCase: "20", unitsPerOuter: "20 / Outer Case54204" },
+    { productCode: "410614", outerBarcode: "6009214296180", barcode: "6009214296180", description: "Cocktail Mix Chip BBQ 100 g", packSize: "100 g", sellBy: "98", bbDate: "112", casesPerPallet: "20", unitsPerCase: "20", unitsPerOuter: "20 / Outer Case54204" },
+    { productCode: "410610", outerBarcode: "6009223187172", barcode: "6009223187172", description: "Cocktail Mix Chip BBQ 30 g", packSize: "30 g", sellBy: "98", bbDate: "112", casesPerPallet: "30", unitsPerCase: "48", unitsPerOuter: "48 / Outer Case65354" },
+    { productCode: "410617", outerBarcode: "6007875204742", barcode: "6007875204742", description: "Corn Crunch Cheddar Flavoured 100g", packSize: "100 g", sellBy: "98", bbDate: "112", casesPerPallet: "20", unitsPerCase: "20", unitsPerOuter: "20 / Outer Case54204" },
+    { productCode: "411416", outerBarcode: "6009233586477", barcode: "6009233586477", description: "Cheddar flavoured corn crunch 30 g", packSize: "30g", sellBy: "98", bbDate: "112", casesPerPallet: "30", unitsPerCase: "48", unitsPerOuter: "48 / Outer Case65304" },
+    { productCode: "410615", outerBarcode: "6009233586453", barcode: "6009233586453", description: "Tomato Crunch 100g", packSize: "100g", sellBy: "98", bbDate: "112", casesPerPallet: "20", unitsPerCase: "20", unitsPerOuter: "20 / Outer Case54204" },
+    { productCode: "411417", outerBarcode: "6009233586484", barcode: "6009233586484", description: "Jalapeno Popper flavoured corn crunch 30g", packSize: "30g", sellBy: "98", bbDate: "112", casesPerPallet: "30", unitsPerCase: "48", unitsPerOuter: "48 / Outer Case65304" },
+    { productCode: "412005", outerBarcode: "6009195223038", barcode: "6009195223038", description: "POPCORN - Caramel Coated 150 g", packSize: "150 g", sellBy: "114", bbDate: "155", casesPerPallet: "48", unitsPerCase: "14", unitsPerOuter: "14 / Outer Case16348" },
+    { productCode: "412003", outerBarcode: "6009189862717", barcode: "6009189862717", description: "POPCORN - Sea Salt 90 g", packSize: "90 g", sellBy: "127", bbDate: "141", casesPerPallet: "32", unitsPerCase: "14", unitsPerOuter: "14 / Outer Case84324" },
+    { productCode: "412004", outerBarcode: "6009189862700", barcode: "6009189862700", description: "POPCORN - Salt & Vinegar 90 g", packSize: "90 g", sellBy: "127", bbDate: "141", casesPerPallet: "32", unitsPerCase: "14", unitsPerOuter: "14 / Outer Case84324" },
+    { productCode: "412002", outerBarcode: "6009189862694", barcode: "6009189862694", description: "POPCORN - Sour Cream & Chives 90 g", packSize: "90 g", sellBy: "127", bbDate: "141", casesPerPallet: "32", unitsPerCase: "14", unitsPerOuter: "14 / Outer Case84324" },
+    { productCode: "412007", outerBarcode: "6009195499853", barcode: "6009195499853", description: "POPCORN - Sour Cream & Chives 25 g", packSize: "25 g", sellBy: "127", bbDate: "141", casesPerPallet: "48", unitsPerCase: "24", unitsPerOuter: "24 / Outer Case12448" },
+    { productCode: "412001", outerBarcode: "6009189862687", barcode: "6009189862687", description: "POPCORN - White Cheddar 90 g", packSize: "90 g", sellBy: "127", bbDate: "141", casesPerPallet: "32", unitsPerCase: "14", unitsPerOuter: "14 / Outer Case84324" },
+    { productCode: "412006", outerBarcode: "6009195499846", barcode: "6009195499846", description: "POPCORN - White Cheddar 25 g", packSize: "25 g", sellBy: "127", bbDate: "141", casesPerPallet: "48", unitsPerCase: "24", unitsPerOuter: "24 / Outer Case12448" },
+    { productCode: "412009", outerBarcode: "6009223464297", barcode: "6009223464297", description: "POPCORN - Feta & Black Pepper 90 g", packSize: "90 g", sellBy: "127", bbDate: "141", casesPerPallet: "32", unitsPerCase: "14", unitsPerOuter: "14 / Outer Case84324" },
+    { productCode: "412010", outerBarcode: "6009223464303", barcode: "6009223464303", description: "POPCORN - Jalapeno Atchar 90 g", packSize: "90 g", sellBy: "127", bbDate: "141", casesPerPallet: "32", unitsPerCase: "14", unitsPerOuter: "14 / Outer Case84324" },
+    { productCode: "412011", outerBarcode: "6009223464327", barcode: "6009223464327", description: "POPCORN - Butter Flavoured 90 g", packSize: "90 g", sellBy: "127", bbDate: "141", casesPerPallet: "32", unitsPerCase: "14", unitsPerOuter: "14 / Outer Case84324" }
   ];
 
-  let products = loadStorage(STORAGE_KEYS.products, null);
-  if (!products || !Array.isArray(products) || products.length === 0) {
-    products = DEFAULT_DEMO_PRODUCTS;
-    saveStorage(STORAGE_KEYS.products, products);
-  }
+  // Auto-sync stale local storage data with FULL_PRODUCT_MASTER
+  let products = FULL_PRODUCT_MASTER;
+  saveStorage(STORAGE_KEYS.products, products);
 
   let loadingRecords = loadStorage(STORAGE_KEYS.loading, []);
   let barcodeProblems = loadStorage(STORAGE_KEYS.problems, []);
@@ -65,12 +90,6 @@
 
   let currentScannedProduct = null;
   let currentScannedBarcode = "";
-  let scanner = null;
-  let scannerRunning = false;
-  let problemBarcode = "";
-  let problemProduct = null;
-
-  // ---------- Basic helpers ----------
 
   function $(id) {
     return document.getElementById(id);
@@ -81,7 +100,7 @@
       const value = localStorage.getItem(key);
       return value ? JSON.parse(value) : fallback;
     } catch (error) {
-      console.error("Could not load local storage:", error);
+      console.error("Storage read error:", error);
       return fallback;
     }
   }
@@ -90,18 +109,29 @@
     try {
       localStorage.setItem(key, JSON.stringify(value));
     } catch (error) {
-      console.error("Could not save to local storage:", error);
+      console.error("Storage write error:", error);
     }
   }
 
-  function normalizeBarcode(value) {
-    return String(value ?? "")
-      .trim()
-      .replace(/[\s\r\n\t]/g, "");
+  function normalizeCode(value) {
+    return String(value ?? "").trim().replace(/[\s\r\n\t]/g, "").toLowerCase();
+  }
+
+  function cleanNumber(val) {
+    if (!val) return 0;
+    const match = String(val).match(/\d+/);
+    return match ? parseInt(match[0], 10) : 0;
   }
 
   function displayValue(value) {
-    return value === undefined || value === null || value === "" ? "-" : String(value);
+    return value === undefined || value === null || value === "" || value === "#N/A" ? "-" : String(value);
+  }
+
+  function getEffectiveOuterBarcode(product) {
+    if (product && product.outerBarcode && product.outerBarcode !== "#N/A" && product.outerBarcode.trim() !== "") {
+      return product.outerBarcode;
+    }
+    return product ? product.barcode : "-";
   }
 
   function escapeHtml(value) {
@@ -117,822 +147,263 @@
     return new Date().toISOString().slice(0, 10);
   }
 
-  function formatDateTime(dateValue) {
-    const date = new Date(dateValue);
-    return {
-      date: date.toLocaleDateString("en-ZA"),
-      time: date.toLocaleTimeString("en-ZA", {
-        hour: "2-digit",
-        minute: "2-digit",
-        second: "2-digit"
-      })
-    };
-  }
-
   function showToast(message, type = "") {
     const toast = $("toast");
     if (!toast) return;
     toast.textContent = message;
     toast.className = `toast ${type}`;
     toast.classList.remove("hidden");
-
     clearTimeout(showToast.timer);
-    showToast.timer = setTimeout(() => {
-      toast.classList.add("hidden");
-    }, 3500);
+    showToast.timer = setTimeout(() => toast.classList.add("hidden"), 3500);
   }
 
-  // ---------- Navigation ----------
+  function getProductByAnyCode(code) {
+    const query = normalizeCode(code);
+    if (!query) return null;
+    return products.find(p => 
+      normalizeCode(p.barcode) === query ||
+      normalizeCode(p.outerBarcode) === query ||
+      normalizeCode(p.productCode) === query
+    ) || null;
+  }
 
   function showSection(sectionId) {
-    document.querySelectorAll(".page-section").forEach(section => {
-      section.classList.toggle("active", section.id === sectionId);
-    });
-
-    document.querySelectorAll(".nav-button").forEach(button => {
-      button.classList.toggle("active", button.dataset.section === sectionId);
-    });
-
-    if ($("mainNav")) $("mainNav").classList.remove("open");
-
-    if (sectionId === "dashboard") {
-      updateDashboard();
-    } else if (sectionId === "history") {
-      renderLoadingHistory();
-    } else if (sectionId === "products") {
-      renderProducts();
-    } else if (sectionId === "problems") {
-      renderProblems();
-    } else if (sectionId === "reports") {
-      renderReports();
-    } else if (sectionId === "scan") {
-      updateScanSessionUI();
-      setTimeout(() => focusBarcodeInput(), 150);
-    }
+    document.querySelectorAll(".page-section").forEach(s => s.classList.toggle("active", s.id === sectionId));
+    document.querySelectorAll(".nav-button").forEach(b => b.classList.toggle("active", b.dataset.section === sectionId));
+    if (sectionId === "dashboard") updateDashboard();
+    if (sectionId === "history") renderLoadingHistory();
+    if (sectionId === "products") renderProducts();
   }
-
-  // ---------- Session ----------
 
   function ensureActiveSession() {
     if (!currentSession) {
       currentSession = {
         id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now()),
-        name: "Demo Session",
-        user: "Tester",
+        user: AUTHORIZED_USERS[0],
         truck: "TRK-01-GP",
-        customer: "Woolworths",
-        delivery: "DEL-99812",
-        route: "JHB Central",
+        customer: "General Dispatch",
+        delivery: "DEL-001",
+        route: "Main Route",
         startedAt: new Date().toISOString()
       };
       saveStorage(STORAGE_KEYS.session, currentSession);
-      updateSessionUI();
     }
   }
-
-  function openSessionModal() {
-    if ($("sessionName")) $("sessionName").value = "";
-    if ($("sessionUser")) $("sessionUser").value = currentSession?.user || "";
-    if ($("sessionTruck")) $("sessionTruck").value = currentSession?.truck || "";
-    if ($("sessionCustomer")) $("sessionCustomer").value = currentSession?.customer || "";
-    if ($("sessionDelivery")) $("sessionDelivery").value = currentSession?.delivery || "";
-    if ($("sessionRoute")) $("sessionRoute").value = currentSession?.route || "";
-    if ($("sessionModal")) $("sessionModal").classList.remove("hidden");
-    if ($("sessionName")) $("sessionName").focus();
-  }
-
-  function closeSessionModal() {
-    if ($("sessionModal")) $("sessionModal").classList.add("hidden");
-  }
-
-  function startSession() {
-    const user = $("sessionUser") ? $("sessionUser").value.trim() : "";
-    const truck = $("sessionTruck") ? $("sessionTruck").value.trim() : "";
-    const customer = $("sessionCustomer") ? $("sessionCustomer").value.trim() : "";
-    const delivery = $("sessionDelivery") ? $("sessionDelivery").value.trim() : "";
-
-    if (!user || !truck || !customer || !delivery) {
-      showToast("Please enter employee, truck, customer and delivery information.", "warning");
-      return;
-    }
-
-    currentSession = {
-      id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now()),
-      name: ($("sessionName") && $("sessionName").value.trim()) || "Loading Session",
-      user,
-      truck,
-      customer,
-      delivery,
-      route: $("sessionRoute") ? $("sessionRoute").value.trim() : "",
-      startedAt: new Date().toISOString()
-    };
-
-    saveStorage(STORAGE_KEYS.session, currentSession);
-    closeSessionModal();
-    updateSessionUI();
-    showSection("scan");
-    showToast("Loading session started.", "success");
-  }
-
-  function updateSessionUI() {
-    const hasSession = Boolean(currentSession);
-
-    if ($("scanSessionBadge")) {
-      $("scanSessionBadge").textContent = hasSession ? "SESSION ACTIVE" : "NO SESSION";
-      $("scanSessionBadge").className = `badge ${hasSession ? "badge-success" : "badge-neutral"}`;
-    }
-
-    if ($("sessionBadge")) {
-      $("sessionBadge").textContent = hasSession ? "SESSION ACTIVE" : "NO SESSION";
-      $("sessionBadge").className = `badge ${hasSession ? "badge-success" : "badge-neutral"}`;
-    }
-
-    if ($("noSessionWarning")) {
-      $("noSessionWarning").classList.toggle("hidden", hasSession);
-    }
-
-    if (hasSession) {
-      if ($("dashboardSessionText")) {
-        $("dashboardSessionText").textContent =
-          `${currentSession.customer} • ${currentSession.truck} • ${currentSession.delivery}`;
-      }
-
-      if ($("sessionSummary")) {
-        $("sessionSummary").innerHTML = `
-          <div class="session-item"><small>User</small><strong>${escapeHtml(currentSession.user)}</strong></div>
-          <div class="session-item"><small>Truck</small><strong>${escapeHtml(currentSession.truck)}</strong></div>
-          <div class="session-item"><small>Customer</small><strong>${escapeHtml(currentSession.customer)}</strong></div>
-          <div class="session-item"><small>Delivery</small><strong>${escapeHtml(currentSession.delivery)}</strong></div>
-        `;
-      }
-    } else {
-      if ($("dashboardSessionText")) $("dashboardSessionText").textContent = "No active session.";
-      if ($("sessionSummary")) {
-        $("sessionSummary").innerHTML = `
-          <div class="empty-table">Start a loading session to begin scanning pallets.</div>
-        `;
-      }
-    }
-  }
-
-  function updateScanSessionUI() {
-    updateSessionUI();
-  }
-
-  // ---------- Excel Import ----------
-
-  function importExcel() {
-    if ($("excelFileInput")) $("excelFileInput").click();
-  }
-
-  async function handleExcelFile(event) {
-    const file = event.target.files[0];
-    if (!file) return;
-
-    try {
-      if (typeof XLSX === "undefined") {
-        throw new Error("The Excel reader library did not load. Check internet connection.");
-      }
-
-      if ($("excelStatus")) {
-        $("excelStatus").textContent = `Reading ${file.name}...`;
-        $("excelStatus").className = "alert alert-info";
-      }
-
-      const buffer = await file.arrayBuffer();
-      const workbook = XLSX.read(buffer, { type: "array", cellText: true, cellDates: false });
-      const firstSheetName = workbook.SheetNames[0];
-
-      if (!firstSheetName) throw new Error("The Excel file contains no worksheets.");
-
-      const sheet = workbook.Sheets[firstSheetName];
-      const rows = XLSX.utils.sheet_to_json(sheet, { defval: "", raw: false });
-
-      if (!rows.length) throw new Error("The worksheet is empty.");
-
-      const importedProducts = rows
-        .map(row => normalizeProductRow(row))
-        .filter(product => product.barcode);
-
-      if (!importedProducts.length) {
-        throw new Error("No barcode values found. Ensure your sheet has a 'Barcode' column.");
-      }
-
-      products = importedProducts;
-      saveStorage(STORAGE_KEYS.products, products);
-
-      renderProducts();
-      updateDashboard();
-
-      if ($("excelStatus")) {
-        $("excelStatus").textContent =
-          `File: ${file.name} • Products: ${products.length} • Unique Barcodes: ${getUniqueBarcodeCount()} • Status: Ready`;
-        $("excelStatus").className = "alert alert-success";
-      }
-
-      showToast(`${products.length} products imported.`, "success");
-    } catch (error) {
-      console.error(error);
-      if ($("excelStatus")) {
-        $("excelStatus").textContent = `Import failed: ${error.message}`;
-        $("excelStatus").className = "alert alert-error";
-      }
-      showToast(error.message, "error");
-    } finally {
-      event.target.value = "";
-    }
-  }
-
-  function normalizeHeader(header) {
-    return String(header ?? "").trim().toLowerCase().replace(/[\s_\-/]+/g, "");
-  }
-
-  function findColumn(row, possibleNames) {
-    const keys = Object.keys(row);
-    for (const name of possibleNames) {
-      const wanted = normalizeHeader(name);
-      const exact = keys.find(key => normalizeHeader(key) === wanted);
-      if (exact) return exact;
-    }
-    for (const key of keys) {
-      const normalized = normalizeHeader(key);
-      if (possibleNames.some(name => normalized.includes(normalizeHeader(name)))) return key;
-    }
-    return null;
-  }
-
-  function normalizeProductRow(row) {
-    const barcodeColumn = findColumn(row, ["Barcode", "Bar Code", "Pallet Barcode", "EAN", "UPC", "GTIN"]);
-    const productCodeColumn = findColumn(row, ["Product Code", "ProductCode", "SKU", "Item Code"]);
-    const descriptionColumn = findColumn(row, ["Product Description", "Product", "Description", "Product Name"]);
-    const customerColumn = findColumn(row, ["Customer", "Customer Name"]);
-    const packSizeColumn = findColumn(row, ["Pack Size", "PackSize", "Size"]);
-    const casesColumn = findColumn(row, ["Cases Per Pallet", "Cases/Pallet", "Cases"]);
-    const palletTypeColumn = findColumn(row, ["Pallet Type", "Pallet"]);
-
-    return {
-      barcode: normalizeBarcode(barcodeColumn ? row[barcodeColumn] : ""),
-      productCode: productCodeColumn ? String(row[productCodeColumn]).trim() : "",
-      description: descriptionColumn ? String(row[descriptionColumn]).trim() : "",
-      customer: customerColumn ? String(row[customerColumn]).trim() : "",
-      packSize: packSizeColumn ? String(row[packSizeColumn]).trim() : "",
-      casesPerPallet: casesColumn ? String(row[casesColumn]).trim() : "",
-      palletType: palletTypeColumn ? String(row[palletTypeColumn]).trim() : ""
-    };
-  }
-
-  function getUniqueBarcodeCount() {
-    return new Set((products || []).map(product => product.barcode)).size;
-  }
-
-  function getProductByBarcode(barcode) {
-    const normalized = normalizeBarcode(barcode);
-    return (products || []).find(product => normalizeBarcode(product.barcode) === normalized) || null;
-  }
-
-  // ---------- Barcode Verification ----------
 
   function checkBarcode() {
-    const inputField = $("barcodeInput");
-    if (!inputField) return;
-
-    const barcode = normalizeBarcode(inputField.value);
-
-    if (!barcode) {
-      showToast("Enter or scan a barcode first.", "warning");
-      focusBarcodeInput();
+    const input = $("barcodeInput");
+    if (!input) return;
+    const rawCode = input.value.trim();
+    if (!rawCode) {
+      showToast("Enter or scan a barcode/code first.", "warning");
       return;
     }
 
     ensureActiveSession();
-
-    currentScannedBarcode = barcode;
-    const product = getProductByBarcode(barcode);
+    currentScannedBarcode = rawCode;
+    const product = getProductByAnyCode(rawCode);
     currentScannedProduct = product;
 
-    const previousLoads = loadingRecords.filter(
-      record => normalizeBarcode(record.barcode) === barcode && record.status === "LOADED"
+    const query = normalizeCode(rawCode);
+    const duplicates = loadingRecords.filter(r => 
+      normalizeCode(r.barcode) === query ||
+      normalizeCode(r.outerBarcode) === query ||
+      normalizeCode(r.productCode) === query
     );
 
-    if (previousLoads.length > 0) {
-      showDuplicateResult(barcode, previousLoads);
+    if (duplicates.length > 0) {
+      showDuplicateResult(rawCode, duplicates);
       return;
     }
 
     if (!product) {
-      showInvalidResult(barcode);
+      showInvalidResult(rawCode);
       return;
     }
 
-    showValidResult(product);
+    showValidResult(product, rawCode);
   }
 
-  function showValidResult(product) {
-    const resultBox = $("scanResult");
-    if (!resultBox) return;
+  function showValidResult(product, scannedCode) {
+    const res = $("scanResult");
+    res.className = "scan-result success";
 
-    resultBox.className = "scan-result success";
-    resultBox.innerHTML = `
+    const outerBarcode = getEffectiveOuterBarcode(product);
+
+    res.innerHTML = `
       <div class="result-icon">✓</div>
-      <h3>VALID BARCODE</h3>
+      <h3>VALID PRODUCT MATCH</h3>
+      <p><strong>Scanned Code:</strong> ${escapeHtml(scannedCode)}</p>
+      <p><strong>Product:</strong> ${escapeHtml(product.description)}</p>
+      <p><strong>Product SKU:</strong> ${escapeHtml(product.productCode)}</p>
       <p><strong>Barcode:</strong> ${escapeHtml(product.barcode)}</p>
-      <p><strong>Product:</strong> ${escapeHtml(displayValue(product.description))}</p>
-      <p><strong>Product Code:</strong> ${escapeHtml(displayValue(product.productCode))}</p>
-      <p><strong>Customer:</strong> ${escapeHtml(displayValue(product.customer))}</p>
-      <p><strong>Barcode Quality:</strong> PASS</p>
+      <p><strong>Outer Barcode:</strong> ${escapeHtml(outerBarcode)}</p>
     `;
-
     showLoadConfirmation(product);
   }
 
-  function showInvalidResult(barcode) {
-    const resultBox = $("scanResult");
-    if (!resultBox) return;
-
-    resultBox.className = "scan-result error";
-    resultBox.innerHTML = `
+  function showInvalidResult(scannedCode) {
+    const res = $("scanResult");
+    res.className = "scan-result error";
+    res.innerHTML = `
       <div class="result-icon">✕</div>
-      <h3>BARCODE NOT FOUND</h3>
-      <p><strong>Barcode:</strong> ${escapeHtml(barcode)}</p>
-      <p>This barcode does not exist in the product master.</p>
-      <p><strong>DO NOT LOAD THIS PALLET</strong></p>
-      <button id="reportUnknownButton" class="danger-button">Report Barcode Problem</button>
+      <h3>PRODUCT NOT FOUND</h3>
+      <p><strong>Scanned Code:</strong> ${escapeHtml(scannedCode)}</p>
+      <p>No match for barcode, outer barcode, or SKU.</p>
     `;
-
-    if ($("reportUnknownButton")) {
-      $("reportUnknownButton").addEventListener("click", () => openProblemModal(barcode, null));
-    }
-
-    hideLoadConfirmation();
-  }
-
-  function showDuplicateResult(barcode, previousLoads) {
-    const last = previousLoads[previousLoads.length - 1];
-    const date = formatDateTime(last.timestamp);
-    const resultBox = $("scanResult");
-
-    if (resultBox) {
-      resultBox.className = "scan-result warning";
-      resultBox.innerHTML = `
-        <div class="result-icon">⚠</div>
-        <h3>DUPLICATE PALLET</h3>
-        <p><strong>Barcode:</strong> ${escapeHtml(barcode)}</p>
-        <p>This barcode has already been loaded.</p>
-        <p><strong>Loaded:</strong> ${escapeHtml(date.date)} ${escapeHtml(date.time)}</p>
-        <p><strong>Truck:</strong> ${escapeHtml(displayValue(last.truck))}</p>
-        <button id="reportDuplicateButton" class="danger-button">Report Duplicate Barcode</button>
-      `;
-
-      if ($("reportDuplicateButton")) {
-        $("reportDuplicateButton").addEventListener("click", () => openProblemModal(barcode, currentScannedProduct));
-      }
-    }
-
-    if ($("duplicatePanel")) {
-      $("duplicatePanel").innerHTML = `
-        <strong>⚠ Duplicate scan detected.</strong>
-        This pallet barcode already exists in the loading history.
-      `;
-      $("duplicatePanel").classList.remove("hidden");
-    }
-
-    hideLoadConfirmation();
-  }
-
-  function focusBarcodeInput() {
-    if ($("scan") && $("scan").classList.contains("active") && $("barcodeInput")) {
-      $("barcodeInput").focus();
-    }
-  }
-
-  function hideLoadConfirmation() {
     if ($("loadConfirmationPanel")) $("loadConfirmationPanel").classList.add("hidden");
-    if ($("duplicatePanel")) $("duplicatePanel").classList.add("hidden");
   }
 
-  function updateCalculatedQuantity() {
-    if (!$("loadCases") || !$("loadQuantity")) return;
-
-    const cases = numberOrZero($("loadCases").value);
-    
-    // Extract numerical units per case multiplier if available in packSize (e.g. "24x100g")
-    let unitsPerCase = 1;
-    if (currentScannedProduct && currentScannedProduct.packSize) {
-      const match = String(currentScannedProduct.packSize).match(/^(\d+)/);
-      if (match) {
-        unitsPerCase = parseInt(match[1], 10) || 1;
-      }
-    }
-
-    const calculatedQuantity = cases * unitsPerCase;
-    $("loadQuantity").value = calculatedQuantity > 0 ? calculatedQuantity : "";
+  function showDuplicateResult(scannedCode, duplicates) {
+    const res = $("scanResult");
+    res.className = "scan-result warning";
+    res.innerHTML = `
+      <div class="result-icon">⚠</div>
+      <h3>DUPLICATE SCAN DETECTED</h3>
+      <p><strong>Scanned Code:</strong> ${escapeHtml(scannedCode)}</p>
+      <p>This product/barcode has already been recorded in history.</p>
+    `;
+    if ($("loadConfirmationPanel")) $("loadConfirmationPanel").classList.add("hidden");
   }
 
   function showLoadConfirmation(product) {
-    if ($("duplicatePanel")) $("duplicatePanel").classList.add("hidden");
     if ($("loadConfirmationPanel")) $("loadConfirmationPanel").classList.remove("hidden");
-
-    if ($("loadTruck")) $("loadTruck").value = currentSession?.truck || "";
-    if ($("loadCustomer")) $("loadCustomer").value = currentSession?.customer || product.customer || "";
-    if ($("loadDelivery")) $("loadDelivery").value = currentSession?.delivery || "";
-    if ($("loadRoute")) $("loadRoute").value = currentSession?.route || "";
-    if ($("loadCases")) $("loadCases").value = product.casesPerPallet || "";
     
-    // Auto-calculate initial quantity based on cases and pack size
-    updateCalculatedQuantity();
+    const cases = cleanNumber(product.casesPerPallet);
+    const unitsPerCase = cleanNumber(product.unitsPerCase);
+    const calculatedUnits = cases * unitsPerCase;
+    const outerBarcode = getEffectiveOuterBarcode(product);
 
-    if ($("loadPalletType")) $("loadPalletType").value = product.palletType || "";
-    if ($("loadUser")) $("loadUser").value = currentSession?.user || "";
+    if ($("loadCases")) $("loadCases").value = cases || "";
+    if ($("loadQuantity")) $("loadQuantity").value = calculatedUnits || "";
 
     if ($("loadProductSummary")) {
       $("loadProductSummary").innerHTML = `
+        <div class="summary-item"><small>Product Code</small><strong>${escapeHtml(product.productCode)}</strong></div>
+        <div class="summary-item"><small>Description</small><strong>${escapeHtml(product.description)}</strong></div>
+        <div class="summary-item"><small>Outer Barcode</small><strong>${escapeHtml(outerBarcode)}</strong></div>
         <div class="summary-item"><small>Barcode</small><strong>${escapeHtml(product.barcode)}</strong></div>
-        <div class="summary-item"><small>Product Code</small><strong>${escapeHtml(displayValue(product.productCode))}</strong></div>
-        <div class="summary-item"><small>Product</small><strong>${escapeHtml(displayValue(product.description))}</strong></div>
-        <div class="summary-item"><small>Customer</small><strong>${escapeHtml(displayValue(product.customer))}</strong></div>
-        <div class="summary-item"><small>Pack Size</small><strong>${escapeHtml(displayValue(product.packSize))}</strong></div>
-        <div class="summary-item"><small>Cases/Pallet</small><strong>${escapeHtml(displayValue(product.casesPerPallet))}</strong></div>
+        <div class="summary-item"><small>Cases / Pallet</small><strong>${cases || "-"}</strong></div>
+        <div class="summary-item"><small>Units / Case</small><strong>${unitsPerCase || "-"}</strong></div>
+        <div class="summary-item"><small>Units / Pallet</small><strong id="summaryTotalUnits">${calculatedUnits || "-"}</strong></div>
       `;
     }
+  }
 
-    if ($("loadTruck")) $("loadTruck").focus();
+  function recalculateUnits() {
+    if (!currentScannedProduct) return;
+    const casesVal = parseInt($("loadCases") ? $("loadCases").value : 0, 10) || 0;
+    const unitsPerCase = cleanNumber(currentScannedProduct.unitsPerCase);
+    const totalUnits = casesVal * unitsPerCase;
+
+    if ($("loadQuantity")) {
+      $("loadQuantity").value = totalUnits;
+    }
+
+    const summaryUnits = $("summaryTotalUnits");
+    if (summaryUnits) {
+      summaryUnits.textContent = totalUnits;
+    }
   }
 
   function confirmLoad() {
-    ensureActiveSession();
-
-    if (!currentScannedProduct || !currentScannedBarcode) {
-      showToast("No valid barcode selected.", "warning");
-      return;
-    }
-
-    const truck = $("loadTruck") ? $("loadTruck").value.trim() : "";
-    const customer = $("loadCustomer") ? $("loadCustomer").value.trim() : "";
-    const delivery = $("loadDelivery") ? $("loadDelivery").value.trim() : "";
-    const loadedBy = $("loadUser") ? $("loadUser").value.trim() : "";
-
-    if (!truck || !customer || !delivery || !loadedBy) {
-      showToast("Truck, customer, delivery, and loaded-by fields are required.", "warning");
-      return;
-    }
-
+    if (!currentScannedProduct) return;
     const record = {
       id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now()),
-      sessionId: currentSession.id,
-      timestamp: new Date().toISOString(),
       date: getToday(),
-      time: new Date().toLocaleTimeString("en-ZA", { hour: "2-digit", minute: "2-digit", second: "2-digit" }),
-      truck,
-      customer,
-      delivery,
-      route: $("loadRoute") ? $("loadRoute").value.trim() : "",
-      barcode: currentScannedBarcode,
+      time: new Date().toLocaleTimeString("en-ZA"),
+      truck: $("loadTruck") ? $("loadTruck").value : "",
+      customer: $("loadCustomer") ? $("loadCustomer").value : "",
+      delivery: $("loadDelivery") ? $("loadDelivery").value : "",
+      barcode: currentScannedProduct.barcode,
+      outerBarcode: getEffectiveOuterBarcode(currentScannedProduct),
       productCode: currentScannedProduct.productCode,
       product: currentScannedProduct.description,
-      packSize: currentScannedProduct.packSize,
-      cases: numberOrZero($("loadCases") ? $("loadCases").value : 0),
-      quantity: numberOrZero($("loadQuantity") ? $("loadQuantity").value : 0),
-      palletType: $("loadPalletType") ? $("loadPalletType").value.trim() : "",
+      cases: $("loadCases") ? $("loadCases").value : 0,
+      quantity: $("loadQuantity") ? $("loadQuantity").value : 0,
       status: "LOADED",
-      loadedBy
+      loadedBy: $("loadUser") ? $("loadUser").value : AUTHORIZED_USERS[0]
     };
 
     loadingRecords.push(record);
     saveStorage(STORAGE_KEYS.loading, loadingRecords);
-
-    currentScannedProduct = null;
-    currentScannedBarcode = "";
-
     if ($("barcodeInput")) $("barcodeInput").value = "";
-    hideLoadConfirmation();
-
-    if ($("scanResult")) {
-      $("scanResult").className = "scan-result success";
-      $("scanResult").innerHTML = `
-        <div class="result-icon">✓</div>
-        <h3>PALLET LOADED</h3>
-        <p>Barcode ${escapeHtml(record.barcode)} was successfully recorded.</p>
-        <p>Ready for the next pallet.</p>
-      `;
-    }
-
-    updateDashboard();
+    if ($("loadConfirmationPanel")) $("loadConfirmationPanel").classList.add("hidden");
+    showToast("Pallet successfully logged.", "success");
     renderLoadingHistory();
-    renderReports();
-    showToast("Pallet loading saved.", "success");
-
-    setTimeout(() => {
-      focusBarcodeInput();
-    }, 250);
-  }
-
-  function numberOrZero(value) {
-    const number = Number(value);
-    return Number.isFinite(number) ? number : 0;
-  }
-
-  // ---------- Camera Scanner ----------
-
-  async function startCameraScanner() {
-    if (scannerRunning) return;
-
-    if (typeof Html5Qrcode === "undefined") {
-      showToast("Camera scanner library did not load.", "error");
-      return;
-    }
-
-    try {
-      scanner = new Html5Qrcode("reader");
-      const config = { fps: 10, qrbox: { width: 280, height: 160 } };
-
-      await scanner.start(
-        { facingMode: "environment" },
-        config,
-        decodedText => {
-          if (!decodedText) return;
-          if ($("barcodeInput")) $("barcodeInput").value = normalizeBarcode(decodedText);
-          stopCameraScanner();
-          checkBarcode();
-        },
-        () => {}
-      );
-
-      scannerRunning = true;
-      if ($("startCameraButton")) $("startCameraButton").disabled = true;
-      if ($("stopCameraButton")) $("stopCameraButton").disabled = false;
-      showToast("Camera scanner started.", "success");
-    } catch (error) {
-      console.error(error);
-      showToast("Could not start camera. Use manual entry.", "error");
-    }
-  }
-
-  async function stopCameraScanner() {
-    if (!scanner || !scannerRunning) return;
-    try {
-      await scanner.stop();
-      scanner.clear();
-    } catch (error) {
-      console.warn("Scanner stop:", error);
-    }
-    scanner = null;
-    scannerRunning = false;
-    if ($("startCameraButton")) $("startCameraButton").disabled = false;
-    if ($("stopCameraButton")) $("stopCameraButton").disabled = true;
-  }
-
-  // ---------- History & Products Rendering ----------
-
-  function renderLoadingHistory() {
-    const body = $("historyBody");
-    if (!body) return;
-
-    if (!loadingRecords.length) {
-      body.innerHTML = `<tr><td colspan="11" class="empty-table">No loading records found.</td></tr>`;
-      return;
-    }
-
-    body.innerHTML = loadingRecords
-      .slice()
-      .reverse()
-      .map(record => `
-        <tr>
-          <td>${escapeHtml(displayValue(record.date))}</td>
-          <td>${escapeHtml(displayValue(record.time))}</td>
-          <td>${escapeHtml(displayValue(record.truck))}</td>
-          <td>${escapeHtml(displayValue(record.customer))}</td>
-          <td>${escapeHtml(displayValue(record.delivery))}</td>
-          <td><code>${escapeHtml(displayValue(record.barcode))}</code></td>
-          <td>${escapeHtml(displayValue(record.product))}</td>
-          <td>${escapeHtml(displayValue(record.cases))}</td>
-          <td>${escapeHtml(displayValue(record.quantity))}</td>
-          <td class="status-loaded">${escapeHtml(record.status)}</td>
-          <td>${escapeHtml(displayValue(record.loadedBy))}</td>
-        </tr>
-      `)
-      .join("");
+    updateDashboard();
   }
 
   function renderProducts() {
-    if ($("productCount")) $("productCount").textContent = (products || []).length;
-    if ($("uniqueBarcodeCount")) $("uniqueBarcodeCount").textContent = getUniqueBarcodeCount();
-
+    if ($("productCount")) $("productCount").textContent = products.length;
+    if ($("uniqueBarcodeCount")) $("uniqueBarcodeCount").textContent = new Set(products.map(p => p.barcode)).size;
     const body = $("productBody");
     if (!body) return;
 
-    if (!products.length) {
-      body.innerHTML = `<tr><td colspan="7" class="empty-table">No products found.</td></tr>`;
-      return;
-    }
-
-    body.innerHTML = products
-      .map(product => `
-        <tr>
-          <td><code>${escapeHtml(product.barcode)}</code></td>
-          <td>${escapeHtml(displayValue(product.productCode))}</td>
-          <td>${escapeHtml(displayValue(product.description))}</td>
-          <td>${escapeHtml(displayValue(product.customer))}</td>
-          <td>${escapeHtml(displayValue(product.packSize))}</td>
-          <td>${escapeHtml(displayValue(product.casesPerPallet))}</td>
-          <td>${escapeHtml(displayValue(product.palletType))}</td>
-        </tr>
-      `)
-      .join("");
-  }
-
-  // ---------- Problems & Reports ----------
-
-  function openProblemModal(barcode, product) {
-    problemBarcode = normalizeBarcode(barcode);
-    problemProduct = product || getProductByBarcode(problemBarcode);
-
-    if ($("problemBarcodePreview")) {
-      $("problemBarcodePreview").innerHTML = `
-        <strong>Barcode:</strong> ${escapeHtml(problemBarcode)}<br>
-        <strong>Product:</strong> ${escapeHtml(displayValue(problemProduct?.description))}
-      `;
-    }
-
-    if ($("problemComment")) $("problemComment").value = "";
-    if ($("problemModal")) $("problemModal").classList.remove("hidden");
-  }
-
-  function closeProblemModal() {
-    if ($("problemModal")) $("problemModal").classList.add("hidden");
-  }
-
-  function saveProblem() {
-    if (!problemBarcode) return;
-
-    const problem = {
-      id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now()),
-      date: getToday(),
-      time: new Date().toLocaleTimeString("en-ZA"),
-      barcode: problemBarcode,
-      product: problemProduct?.description || "",
-      problem: $("problemType") ? $("problemType").value : "Issue",
-      comment: $("problemComment") ? $("problemComment").value.trim() : "",
-      reportedBy: ($("problemReporter") && $("problemReporter").value.trim()) || currentSession?.user || "Tester",
-      status: "OPEN"
-    };
-
-    barcodeProblems.push(problem);
-    saveStorage(STORAGE_KEYS.problems, barcodeProblems);
-    closeProblemModal();
-    renderProblems();
-    showToast("Barcode problem reported.", "success");
-  }
-
-  function renderProblems() {
-    const body = $("problemBody");
-    if (!body) return;
-
-    if (!barcodeProblems.length) {
-      body.innerHTML = `<tr><td colspan="9" class="empty-table">No problems reported.</td></tr>`;
-      return;
-    }
-
-    body.innerHTML = barcodeProblems.map(p => `
+    body.innerHTML = products.map(p => `
       <tr>
-        <td>${escapeHtml(p.date)}</td>
-        <td>${escapeHtml(p.time)}</td>
+        <td><code>${escapeHtml(p.productCode)}</code></td>
+        <td><code>${escapeHtml(getEffectiveOuterBarcode(p))}</code></td>
         <td><code>${escapeHtml(p.barcode)}</code></td>
-        <td>${escapeHtml(displayValue(p.product))}</td>
-        <td>${escapeHtml(p.problem)}</td>
-        <td>${escapeHtml(displayValue(p.comment))}</td>
-        <td>${escapeHtml(displayValue(p.reportedBy))}</td>
-        <td><span class="badge badge-warning">${escapeHtml(p.status)}</span></td>
-        <td>-</td>
+        <td>${escapeHtml(p.description)}</td>
+        <td>${escapeHtml(displayValue(p.packSize))}</td>
+        <td>${escapeHtml(displayValue(p.sellBy))}</td>
+        <td>${escapeHtml(displayValue(p.bbDate))}</td>
+        <td>${escapeHtml(displayValue(p.casesPerPallet))}</td>
+        <td>${escapeHtml(cleanNumber(p.unitsPerCase))}</td>
+        <td>${escapeHtml(displayValue(p.unitsPerOuter))}</td>
       </tr>
     `).join("");
   }
 
-  function renderReports() {
-    if (!$("reportDate")) return;
-    const date = $("reportDate").value || getToday();
-    $("reportDate").value = date;
-
-    const records = loadingRecords.filter(r => r.date === date && r.status === "LOADED");
-    if ($("dailyReport")) {
-      $("dailyReport").innerHTML = `
-        <div class="report-card"><span>Pallets Loaded</span><strong>${records.length}</strong></div>
-      `;
-    }
+  function renderLoadingHistory() {
+    const body = $("historyBody");
+    if (!body) return;
+    body.innerHTML = loadingRecords.slice().reverse().map(r => `
+      <tr>
+        <td>${escapeHtml(r.date)}</td>
+        <td>${escapeHtml(r.time)}</td>
+        <td>${escapeHtml(displayValue(r.truck))}</td>
+        <td>${escapeHtml(displayValue(r.customer))}</td>
+        <td>${escapeHtml(displayValue(r.delivery))}</td>
+        <td><code>${escapeHtml(r.barcode)}</code></td>
+        <td>${escapeHtml(r.product)}</td>
+        <td>${escapeHtml(r.cases)}</td>
+        <td>${escapeHtml(r.quantity)}</td>
+        <td class="status-loaded">${escapeHtml(r.status)}</td>
+        <td>${escapeHtml(r.loadedBy)}</td>
+      </tr>
+    `).join("");
   }
 
   function updateDashboard() {
-    const today = getToday();
-    const todayLoaded = loadingRecords.filter(r => r.date === today && r.status === "LOADED");
-
-    if ($("statPallets")) $("statPallets").textContent = todayLoaded.length;
-    if ($("statValid")) $("statValid").textContent = todayLoaded.length;
-
-    updateSessionUI();
+    if ($("statPallets")) $("statPallets").textContent = loadingRecords.length;
+    if ($("statValid")) $("statValid").textContent = loadingRecords.filter(r => r.status === "LOADED").length;
   }
-
-  function loadDemoData() {
-    products = DEFAULT_DEMO_PRODUCTS;
-    saveStorage(STORAGE_KEYS.products, products);
-    renderProducts();
-    if ($("excelStatus")) {
-      $("excelStatus").textContent = `Demo data loaded • Products: ${products.length}`;
-      $("excelStatus").className = "alert alert-success";
-    }
-    showToast("Demo data loaded.", "success");
-  }
-
-  // ---------- Event Listeners ----------
 
   document.addEventListener("DOMContentLoaded", () => {
-    // Navigation
     document.querySelectorAll(".nav-button").forEach(btn => {
       btn.addEventListener("click", () => showSection(btn.dataset.section));
     });
 
-    document.querySelectorAll("[data-go]").forEach(btn => {
-      btn.addEventListener("click", () => showSection(btn.dataset.go));
-    });
-
-    if ($("menuButton")) {
-      $("menuButton").addEventListener("click", () => {
-        if ($("mainNav")) $("mainNav").classList.toggle("open");
-      });
-    }
-
-    if ($("dashboardScanButton")) {
-      $("dashboardScanButton").addEventListener("click", () => {
-        ensureActiveSession();
-        showSection("scan");
-      });
-    }
-
-    if ($("startSessionFromScan")) $("startSessionFromScan").addEventListener("click", openSessionModal);
-    if ($("closeSessionModal")) $("closeSessionModal").addEventListener("click", closeSessionModal);
-    if ($("cancelSessionButton")) $("cancelSessionButton").addEventListener("click", closeSessionModal);
-    if ($("startSessionButton")) $("startSessionButton").addEventListener("click", startSession);
-
-    // Barcode Verification
     if ($("checkBarcodeButton")) $("checkBarcodeButton").addEventListener("click", checkBarcode);
+    if ($("confirmLoadButton")) $("confirmLoadButton").addEventListener("click", confirmLoad);
 
     if ($("barcodeInput")) {
-      $("barcodeInput").addEventListener("keydown", e => {
-        if (e.key === "Enter") {
-          e.preventDefault();
-          checkBarcode();
-        }
+      $("barcodeInput").addEventListener("keypress", (e) => {
+        if (e.key === "Enter") checkBarcode();
       });
     }
 
-    // Demo Buttons (Auto-start session if needed)
-    if ($("demoValidButton")) {
-      $("demoValidButton").addEventListener("click", () => {
-        ensureActiveSession();
-        if ($("barcodeInput")) $("barcodeInput").value = "6001234567890";
-        checkBarcode();
+    const casesInput = $("loadCases");
+    if (casesInput) {
+      ["input", "change", "keyup"].forEach(evt => {
+        casesInput.addEventListener(evt, recalculateUnits);
       });
     }
 
-    if ($("demoInvalidButton")) {
-      $("demoInvalidButton").addEventListener("click", () => {
-        ensureActiveSession();
-        if ($("barcodeInput")) $("barcodeInput").value = "9999999999999";
-        checkBarcode();
-      });
-    }
-
-    if ($("confirmLoadButton")) $("confirmLoadButton").addEventListener("click", confirmLoad);
-    if ($("cancelLoadButton")) {
-      $("cancelLoadButton").addEventListener("click", () => {
-        hideLoadConfirmation();
-        if ($("barcodeInput")) $("barcodeInput").value = "";
-      });
-    }
-
-    // Camera
-    if ($("startCameraButton")) $("startCameraButton").addEventListener("click", startCameraScanner);
-    if ($("stopCameraButton")) $("stopCameraButton").addEventListener("click", stopCameraScanner);
-
-    // Excel & Products
-    if ($("importExcelButton")) $("importExcelButton").addEventListener("click", importExcel);
-    if ($("excelFileInput")) $("excelFileInput").addEventListener("change", handleExcelFile);
-    if ($("loadDemoDataButton")) $("loadDemoDataButton").addEventListener("click", loadDemoData);
-
-    // Problems
-    if ($("closeProblemModal")) $("closeProblemModal").addEventListener("click", closeProblemModal);
-    if ($("cancelProblemButton")) $("cancelProblemButton").addEventListener("click", closeProblemModal);
-    if ($("saveProblemButton")) $("saveProblemButton").addEventListener("click", saveProblem);
-
-    // Auto-calculate units/quantity when cases input changes
-    if ($("loadCases")) {
-      $("loadCases").addEventListener("input", updateCalculatedQuantity);
-      $("loadCases").addEventListener("change", updateCalculatedQuantity);
-    }
-
-    // Initial Renders
     renderProducts();
     renderLoadingHistory();
-    renderProblems();
-    renderReports();
     updateDashboard();
   });
 })();
