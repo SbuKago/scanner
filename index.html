@@ -139,10 +139,14 @@
 
           <div id="reader" class="reader"></div>
 
-          <div class="button-row">
-            <button id="startCameraButton" class="primary-button">Start Camera</button>
+          <div class="camera-wrapper" style="text-align: center; margin: 15px auto;">
+            <button id="startCameraButton" type="button" class="btn btn-primary">📷 Start Camera</button>
+            <button id="stopCameraButton" type="button" class="btn btn-secondary hidden">Stop Camera</button>
 
-            <button id="stopCameraButton" class="secondary-button" disabled>Stop Camera</button>
+            <!-- Notice explicit width/height and block styling -->
+            <div id="reader" class="hidden"
+              style="width: 100%; max-width: 480px; min-height: 320px; margin: 15px auto; background: #000; border-radius: 8px; overflow: hidden;">
+            </div>
           </div>
 
           <p class="help-text">

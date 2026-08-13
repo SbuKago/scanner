@@ -657,28 +657,113 @@
         casesInput.addEventListener(evt, recalculateUnits);
       });
     }
-function startCamera() {
-  Html5Qrcode.getCameras().then(devices => {
-    if (devices && devices.length) {
-      // Pick the last camera in the list (usually the main back camera)
-      const cameraId = devices[devices.length - 1].id;
-      
-      html5QrCode.start(
-        cameraId,
-        { fps: 10, qrbox: { width: 250, height: 150 } },
-        (decodedText) => {
-          document.getElementById("barcodeInput").value = decodedText;
-          stopCamera();
-          if (typeof checkBarcode === "function") checkBarcode();
-        }
-      );
-    } else {
-      alert("No cameras detected on this device.");
+let html5QrCode = null;
+
+async function startCamera() {
+  const readerElement = document.getElementById("reader");
+  const startBtn = document.getElementById("startCameraButton");
+  const stopBtn = document.getElementById("stopCameraButton");
+
+  if (!readerElement) return;
+
+  // 1. Unhide container FIRST so browser can calculate dimensions
+  readerElement.classList.remove("hidden");
+  readerElement.style.display = "block";
+
+  if (startBtn) startBtn.classList.add("hidden");
+  if (stopBtn) stopBtn.classList.remove("hidden");
+
+  // 2. Clear out any ghost scanner instances
+  if (html5QrCode) {
+    try {
+      if (html5QrCode.isScanning) {
+        await html5QrCode.stop();
+      }
+      html5QrCode.clear();
+    } catch (e) {
+      console.log("Cleanup previous instance:", e);
     }
-  }).catch(err => {
-    console.error("Camera enumeration error:", err);
-  });
+  }
+
+  html5QrCode = new Html5Qrcode("reader");
+
+  // 3. Scan configuration without strict aspect ratios to avoid black bars
+  const scanConfig = {
+    fps: 15,
+    qrbox: { width: 250, height: 180 }
+  };
+
+  const onScanSuccess = (decodedText) => {
+    const input = document.getElementById("barcodeInput");
+    if (input) input.value = decodedText;
+
+    stopCamera();
+
+    if (typeof checkBarcode === "function") {
+      checkBarcode();
+    }
+  };
+
+  try {
+    // Try environment (back) camera
+    await html5QrCode.start(
+      { facingMode: { exact: "environment" } },
+      scanConfig,
+      onScanSuccess
+    );
+  } catch (err) {
+    console.log("Exact environment camera failed, falling back to loose constraints...", err);
+    try {
+      // Fallback 1: Loose facingMode
+      await html5QrCode.start(
+        { facingMode: "environment" },
+        scanConfig,
+        onScanSuccess
+      );
+    } catch (err2) {
+      console.log("Loose environment failed, falling back to any default camera...", err2);
+      // Fallback 2: Default user webcam / selfie camera
+      await html5QrCode.start(
+        { facingMode: "user" },
+        scanConfig,
+        onScanSuccess
+      );
+    }
+  }
 }
+
+function stopCamera() {
+  const readerElement = document.getElementById("reader");
+  const startBtn = document.getElementById("startCameraButton");
+  const stopBtn = document.getElementById("stopCameraButton");
+
+  const hideUI = () => {
+    if (readerElement) {
+      readerElement.classList.add("hidden");
+      readerElement.style.display = "none";
+    }
+    if (startBtn) startBtn.classList.remove("hidden");
+    if (stopBtn) stopBtn.classList.add("hidden");
+  };
+
+  if (html5QrCode && html5QrCode.isScanning) {
+    html5QrCode.stop().then(() => {
+      html5QrCode.clear();
+      hideUI();
+    }).catch(() => hideUI());
+  } else {
+    hideUI();
+  }
+}
+
+// Bind button clicks
+document.addEventListener("DOMContentLoaded", () => {
+  const startBtn = document.getElementById("startCameraButton");
+  const stopBtn = document.getElementById("stopCameraButton");
+
+  if (startBtn) startBtn.addEventListener("click", startCamera);
+  if (stopBtn) stopBtn.addEventListener("click", stopCamera);
+});
     updateSessionUI();
     renderProducts();
     renderLoadingHistory();
