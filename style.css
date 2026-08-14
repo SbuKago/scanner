@@ -208,6 +208,8 @@ button:disabled {
   border-left-color: var(--orange);
 }
 
+/* Button Component Styles */
+.btn,
 .primary-button,
 .secondary-button,
 .success-button,
@@ -218,22 +220,31 @@ button:disabled {
   padding: 11px 16px;
   font-weight: 700;
   transition: 0.15s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  text-decoration: none;
 }
 
+.btn-primary,
 .primary-button {
   background: var(--blue);
   color: white;
 }
 
+.btn-primary:hover,
 .primary-button:hover {
   background: var(--blue-dark);
 }
 
+.btn-secondary,
 .secondary-button {
   background: var(--grey-200);
   color: var(--grey-800);
 }
 
+.btn-secondary:hover,
 .secondary-button:hover {
   background: #cbd5e1;
 }
@@ -273,6 +284,7 @@ button:disabled {
   padding: 0;
 }
 
+/* Alerts and Badges */
 .alert {
   padding: 14px 16px;
   border-radius: 10px;
@@ -333,6 +345,7 @@ button:disabled {
   color: var(--orange);
 }
 
+/* Session & Scanner Layout */
 .session-summary {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
@@ -362,9 +375,14 @@ button:disabled {
   gap: 20px;
 }
 
+.camera-wrapper {
+  width: 100%;
+  text-align: center;
+}
+
 .reader {
   width: 100%;
-  min-height: 280px;
+  min-height: 320px;
   border: 2px dashed var(--grey-200);
   border-radius: 10px;
   overflow: hidden;
@@ -373,7 +391,8 @@ button:disabled {
 
 .reader video {
   width: 100% !important;
-  height: auto !important;
+  height: 100% !important;
+  object-fit: cover;
 }
 
 .help-text {
@@ -716,7 +735,6 @@ tbody tr:hover {
 }
 
 @media (max-width: 560px) {
-
   .stat-grid,
   .stat-grid.compact,
   .form-grid,
@@ -733,7 +751,7 @@ tbody tr:hover {
     grid-template-columns: 1fr;
   }
 
-  .button-row>button {
+  .button-row > button {
     flex: 1 1 auto;
   }
 
