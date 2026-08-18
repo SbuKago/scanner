@@ -17,6 +17,30 @@ WHERE barcode = '6009701000242' OR outer_barcode = '16009701000242';
 SELECT * FROM vw_all_barcodes 
 WHERE scanned_barcode IN ('6009701000242', '16009701000242');
 
+UPDATE products
+SET 
+  cases_per_pallet = CASE product_code
+    WHEN '4172AH' THEN 84
+    WHEN '4172AK' THEN 84
+    WHEN '4172AL' THEN 84
+    WHEN '4172AR' THEN 84
+    WHEN '4172AJ' THEN 120
+    WHEN '4172AN' THEN 120
+    WHEN '4172AB' THEN 84
+    ELSE cases_per_pallet
+  END,
+  units_per_case = CASE product_code
+    WHEN '4172AH' THEN 14
+    WHEN '4172AK' THEN 14
+    WHEN '4172AL' THEN 14
+    WHEN '4172AR' THEN 14
+    WHEN '4172AJ' THEN 14
+    WHEN '4172AN' THEN 20
+    WHEN '4172AB' THEN 14
+    ELSE units_per_case
+  END
+WHERE product_code IN ('4172AH', '4172AK', '4172AL', '4172AR', '4172AJ', '4172AN', '4172AB');
+
 -- 1. PRODUCTS MASTER TABLE
 CREATE TABLE IF NOT EXISTS products (
     product_code VARCHAR(100) NOT NULL,
@@ -221,48 +245,51 @@ VALUES
 ('412009', '6009223464297', '16009223464294', 'POPCORN - Feta & Black Pepper 90 g', '90 g', '127', '141', 32', 14),
 ('412010', '6009223464303', '16009223464300', 'POPCORN - Jalapeno Atchar 90 g', '90 g', '127', '141', 32', 14),
 ('412011', '6009223464327', '16009223464324', 'POPCORN - Butter Flavoured 90 g', '90 g', '127', '141', 32', 14),
-('4172AH', '6009701000269', '16009701000266', 'HP Feta & Black Pepper 90 g - FG017', '90 g', '210', '32', 14, 14),
-('4172AK', '6009701000245', '16009701000242', 'HP Cream Cheese & Chives 90 g - FG015', '90 g', '210', '32', 14, 14),
-('4172AL', '6009701000252', '16009701000259', 'HP Cheesy Cheese 90 g - FG016', '90 g', '210', '32', 14, 14),
-('4172AR', '6005574002003', '16005574002000', 'HP Butter Flavour 90 g - FG020', '90 g', '210', '32', 14, 14),
-('4172AJ', '6009701000283', '16009701000280', 'HP Caramel Popcorn 150 g - FG019', '150 g', '180', '48', 14, 14),
-('4172AN', '6009701000023', '16009701000020', 'HP Caramel Popcorn 22 g x 4 - FG011', '22 g x 4', '180', '48', 20, 20),
-('4172AB', '6005574000917', '16005574000914', 'HP Sweet & Salty Popcorn 90g', '90g', '210', '32', 14, 14),
-('4165AJ', '6005574002812', '16005574002819', 'Field & Flavour Tomato 120g', '120g', '153', '20', 26, 26),
-('4165AI', '6005574002829', '16005574002826', 'Field & Flavour Smoked Beef 120g', '120g', '153', '20', 26, 26),
-('4165AK', '6005574002805', '16005574002802', 'Field & Flavour Salt & vinegar 120g', '120g', '153', '20', 26, 26),
-('4165AL', '6005574000467', '16005574003359', 'Field & Flavour Cheese Flavoured 120g', '120g', '122', '20', 26, 26),
-('4165AM', '6005574000573', '16005574003366', 'Field & Flavour Lightly Salted Flavoured 120g', '120g', '153', '20', 26, 26),
-('4165AA', '6005574002867', '16005574002864', 'KC Tomato Flavoured Chips 36 g', '36g', '153', '30', 48, 48),
-('4165AC', '6005574002843', '16005574002840', 'KC Salt & Vinegar Flavoured Chips 36 g', '36g', '153', '30', 48, 48),
-('4165AG', '6005574002881', '16005574002888', 'KC Grilled Steak Flavoured Chips 36 g', '36g', '122', '30', 48, 48),
-('4165AB', '6005574002850', '16005574002857', 'KC Tomato Flavoured Chips 120 g', '120g', '153', '20', 26, 26),
-('4165AD', '6005574002836', '16005574002833', 'KC Salt & Vinegar Flavoured Chips 120 g', '120g', '153', '20', 26, 26),
-('4165AH', '6005574002874', '16005574002871', 'KC Grilled Steak Flavoured Chips 120 g', '120g', '122', '20', 26, 26),
-('4108AM', '6005574003468', '16005574003465', 'KC Blazin''hot BBQ 36g (48)', '36g', '122', '30', 48, 48),
-('4108AO', '6005574003468', '26005574003462', 'KC Blazin''hot BBQ 36g (24)', '36g', '122', '81', 24, 24),
-('4108AL', '6005574003451', '16005574003458', 'KC Blazin''hot BBQ 120g (26)', '120g', '122', '20', 26, 26),
-('4108AN', '6005574003451', '26005574003455', 'KC Blazin''hot BBQ 120g (12)', '120g', '122', '81', 12, 12),
-('4108AS', '6005574003505', '16005574003502', 'Blue Salt & Vinegar (26)', '120g', '183', '20', 26, 26),
-('4108BC', '6005574003505', '26005574003509', 'Blue Salt & Vinegar (12)', '120g', '183', '81', 12, 12),
-('4108AR', '6005574003499', '16005574003496', 'Salt & Vinegar (26)', '120g', '183', '20', 26, 26),
-('4108BB', '6005574003499', '26005574003493', 'Salt & Vinegar (12)', '120g', '183', '81', 12, 12),
-('4108AQ', '6005574003482', '16005574003489', 'Boerewors (26)', '120g', '183', '20', 26, 26),
-('4108BA', '6005574003482', '26005574003486', 'Boerewors (12)', '120g', '183', '81', 12, 12),
-('4108AP', '6005574003475', '16005574003472', 'Chutney (26)', '120g', '183', '20', 26, 26),
-('4108AZ', '6005574003475', '26005574003479', 'Chutney (12)', '120g', '183', '81', 12, 12),
-('4108AT', '6009710723180', '16009710723187', 'Lay''s KC Sea Salt & Black Pepper 120 g', '120g', '126', '54', 20, 26),
-('4108AU', '6009710723159', '16009710723156', 'Lay''s KC Sea Salt & Black Pepper 30 g', '30g', '126', '56', 48, 48),
-('4108AV', '6009710723173', '16009710723170', 'Lay''s KC Cheddar & Cranberry 120 g', '120g', '126', '54', 20, 20),
-('4108AY', '6009710723142', '16009710723149', 'Lay''s KC Cheddar & Cranberry 30 g', '30g', '126', '56', 48, 48),
-('4108AW', '6009710723166', '16009710723163', 'Lay''s KC Rib-Eye & Mushroom 120 g', '120g', '126', '54', 20, 20),
-('4108AX', '6009710723135', '16009710723132', 'Lay\'s KC Rib-Eye & Mushroom 30 g', '30g', '126', '56', 48, 48)
+INSERT INTO products 
+(product_code, outer_barcode, barcode, description, pack_size, sell_by, bb_date, cases_per_pallet, units_per_case) 
+VALUES
+('4172AH', '16009701000266', '6009701000269', 'HP Feta & Black Pepper 90 g - FG017', '90 g', '210', '210', 32, 14),
+('4172AK', '16009701000242', '6009701000245', 'HP Cream Cheese & Chives 90 g - FG015', '90 g', '210', '210', 32, 14),
+('4172AL', '16009701000259', '6009701000252', 'HP Cheesy Cheese 90 g - FG016', '90 g', '210', '210', 32, 14),
+('4172AR', '16005574002000', '6005574002003', 'HP Butter Flavour 90 g - FG020', '90 g', '210', '210', 32, 14),
+('4172AJ', '16009701000280', '6009701000283', 'HP Caramel Popcorn 150 g - FG019', '150 g', '180', '180', 48, 14),
+('4172AN', '16009701000020', '6009701000023', 'HP Caramel Popcorn 22 g x 4 - FG011', '22 g x 4', '180', '180', 48, 20),
+('4172AB', '16005574000914', '6005574000917', 'HP Sweet & Salty Popcorn 90g', '90g', '210', '210', 32, 14),
+('4165AJ', '16005574002819', '6005574002812', 'Field & Flavour Tomato 120g', '120g', '153', '153', 20, 26),
+('4165AI', '16005574002826', '6005574002829', 'Field & Flavour Smoked Beef 120g', '120g', '153', '153', 20, 26),
+('4165AK', '16005574002802', '6005574002805', 'Field & Flavour Salt & vinegar 120g', '120g', '153', '153', 20, 26),
+('4165AL', '16005574003359', '6005574000467', 'Field & Flavour Cheese Flavoured 120g', '120g', '122', '122', 20, 26),
+('4165AM', '16005574003366', '6005574000573', 'Field & Flavour Lightly Salted Flavoured 120g', '120g', '153', '153', 20, 26),
+('4165AA', '16005574002864', '6005574002867', 'KC Tomato Flavoured Chips 36 g', '36g', '153', '153', 30, 48),
+('4165AC', '16005574002840', '6005574002843', 'KC Salt & Vinegar Flavoured Chips 36 g', '36g', '153', '153', 30, 48),
+('4165AG', '16005574002888', '6005574002881', 'KC Grilled Steak Flavoured Chips 36 g', '36g', '122', '122', 30, 48),
+('4165AB', '16005574002857', '6005574002850', 'KC Tomato Flavoured Chips 120 g', '120g', '153', '153', 20, 26),
+('4165AD', '16005574002833', '6005574002836', 'KC Salt & Vinegar Flavoured Chips 120 g', '120g', '153', '153', 20, 26),
+('4165AH', '16005574002871', '6005574002874', 'KC Grilled Steak Flavoured Chips 120 g', '120g', '122', '122', 20, 26),
+('4108AM', '16005574003465', '6005574003468', 'KC Blazin''hot BBQ 36g (48)', '36g', '122', '122', 30, 48),
+('4108AO', '26005574003462', '6005574003468', 'KC Blazin''hot BBQ 36g (24)', '36g', '122', '122', 81, 24),
+('4108AL', '16005574003458', '6005574003451', 'KC Blazin''hot BBQ 120g (26)', '120g', '122', '122', 20, 26),
+('4108AN', '26005574003455', '6005574003451', 'KC Blazin''hot BBQ 120g (12)', '120g', '122', '122', 81, 12),
+('4108AS', '16005574003502', '6005574003505', 'Blue Salt & Vinegar (26)', '120g', '183', '183', 20, 26),
+('4108BC', '26005574003509', '6005574003505', 'Blue Salt & Vinegar (12)', '120g', '183', '183', 81, 12),
+('4108AR', '16005574003496', '6005574003499', 'Salt & Vinegar (26)', '120g', '183', '183', 20, 26),
+('4108BB', '26005574003493', '6005574003499', 'Salt & Vinegar (12)', '120g', '183', '183', 81, 12),
+('4108AQ', '16005574003489', '6005574003482', 'Boerewors (26)', '120g', '183', '183', 20, 26),
+('4108BA', '26005574003486', '6005574003482', 'Boerewors (12)', '120g', '183', '183', 81, 12),
+('4108AP', '16005574003472', '6005574003475', 'Chutney (26)', '120g', '183', '183', 20, 26),
+('4108AZ', '26005574003479', '6005574003475', 'Chutney (12)', '120g', '183', '183', 81, 12),
+('4108AT', '16009710723187', '6009710723180', 'Lay''s KC Sea Salt & Black Pepper 120 g', '120g', '126', '126', 54, 20),
+('4108AU', '16009710723156', '6009710723159', 'Lay''s KC Sea Salt & Black Pepper 30 g', '30g', '126', '126', 56, 48),
+('4108AV', '16009710723170', '6009710723173', 'Lay''s KC Cheddar & Cranberry 120 g', '120g', '126', '126', 54, 20),
+('4108AY', '16009710723149', '6009710723142', 'Lay''s KC Cheddar & Cranberry 30 g', '30g', '126', '126', 56, 48),
+('4108AW', '16009710723163', '6009710723166', 'Lay''s KC Rib-Eye & Mushroom 120 g', '120g', '126', '126', 54, 20),
+('4108AX', '16009710723132', '6009710723135', 'Lay''s KC Rib-Eye & Mushroom 30 g', '30g', '126', '126', 56, 48)
 ON DUPLICATE KEY UPDATE
-    barcode = VALUES(barcode),
-    outer_barcode = VALUES(outer_barcode),
-    description = VALUES(description),
-    pack_size = VALUES(pack_size),
-    sell_by = VALUES(sell_by),
-    bb_date = VALUES(bb_date),
-    cases_per_pallet = VALUES(cases_per_pallet),
-    units_per_case = VALUES(units_per_case);
+  outer_barcode = VALUES(outer_barcode),
+  barcode = VALUES(barcode),
+  description = VALUES(description),
+  pack_size = VALUES(pack_size),
+  sell_by = VALUES(sell_by),
+  bb_date = VALUES(bb_date),
+  cases_per_pallet = VALUES(cases_per_pallet),
+  units_per_case = VALUES(units_per_case);
