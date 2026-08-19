@@ -308,6 +308,7 @@
           <p>Complete log of loaded pallets.</p>
         </div>
       </div>
+
       <div class="panel">
         <div class="table-wrap">
           <table>
@@ -330,6 +331,10 @@
           </table>
         </div>
       </div>
+
+      <button id="exportHistoryButton" class="btn btn-primary">
+        📊 Export History to Excel
+      </button>
     </section>
 
     <!-- PRODUCTS SECTION -->
@@ -436,14 +441,32 @@
           <p>System configuration & user preferences.</p>
         </div>
       </div>
+
       <div class="panel">
-        <h3>Authorized Dispatch Users</h3>
-        <ul>
-          <li>Sibusiso Makhonjwa</li>
-          <li>Afection</li>
-          <li>Boitumelo</li>
-        </ul>
-      </div>
+        <h3>Session Management</h3>
+        <p class="help-text">End the current loading session to finalize records.</p>
+        <div class="button-row">
+          <button id="endCurrentSessionButton">
+            End Current Session
+          </button>
+        </div>
+
+        <div class="panel">
+          <h3>Data & Cache Controls</h3>
+          <p class="help-text">Clear local storage cache and reset stored loading logs and product data.</p>
+          <div class="button-row">
+            <button id="clearCacheSettingsButton" class="danger-button">Clear All Data & Reset Cache</button>
+          </div>
+        </div>
+
+        <div class="panel">
+          <h3>Authorized Dispatch Users</h3>
+          <ul>
+            <li>Sibusiso Makhonjwa</li>
+            <li>Afection</li>
+            <li>Boitumelo</li>
+          </ul>
+        </div>
     </section>
   </main>
 
