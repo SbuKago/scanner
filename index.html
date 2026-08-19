@@ -8,6 +8,8 @@
   <title>Dispatch Barcode Tracker</title>
   <link rel="stylesheet" href="style.css">
 
+  <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+  <script src="app.js"></script>
   <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
   <script src="https://unpkg.com/html5-qrcode" defer></script>
 </head>
@@ -83,6 +85,7 @@
             <h3>Current Loading Session</h3>
             <p id="dashboardSessionText">No active session.</p>
           </div>
+          
           <span id="sessionBadge" class="badge badge-neutral">NO SESSION</span>
         </div>
         <div id="sessionSummary" class="session-summary"></div>
