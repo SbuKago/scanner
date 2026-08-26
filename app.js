@@ -454,7 +454,7 @@ function generateId() {
 
     currentSession = {
         id: generateId(),
-        title: sessionName,
+        name: sessionName,
         user: sessionUser,
         truck: truck,
         customer: customer,
