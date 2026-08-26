@@ -8,10 +8,11 @@
   <title>Dispatch Barcode Tracker</title>
   <link rel="stylesheet" href="style.css">
 
-  <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
-  <script src="app.js"></script>
+  <!-- Keep only one XLSX library -->
   <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
   <script src="https://unpkg.com/html5-qrcode" defer></script>
+
+  <!-- REMOVED app.js from here (Keep it at the bottom of the body) -->
 </head>
 
 <body>
@@ -20,7 +21,10 @@
       <h1>Dispatch Barcode Tracker</h1>
       <p class="subtitle">Pallet loading & barcode verification</p>
     </div>
-    <button id="menuButton" class="icon-button" aria-label="Open menu">☰</button>
+    <button id="menuButton" class="icon-button" type="button" aria-label="Open menu" aria-expanded="false"
+      aria-controls="mainNav">
+      ☰
+    </button>
   </header>
 
   <div id="appNotice" class="app-notice hidden"></div>
@@ -80,41 +84,42 @@
       <div id="problemAlert" class="alert alert-warning hidden"></div>
 
       <div class="panel">
-        <div class="panel-header">
-          <div>
-            <h3>Current Loading Session</h3>
-            <p id="dashboardSessionText">No active session.</p>
-          </div>
-          
-          <span id="sessionBadge" class="badge badge-neutral">NO SESSION</span>
+        <h3>Session Management</h3>
+        <p class="help-text">End the current loading session to finalize records.</p>
+        <div class="button-row">
+          <button id="endCurrentSessionButton">
+            End Current Session
+          </button>
         </div>
-        <div id="sessionSummary" class="session-summary"></div>
-      </div>
+      </div> <!-- ADD THIS MISSING CLOSING TAG HERE -->
 
       <div class="panel">
-        <div class="panel-header">
-          <div>
-            <h3>Recent Loading</h3>
-            <p>Latest pallet activity.</p>
+        <h3>Data & Cache Controls</h3>
+
+        <div class="panel">
+          <div class="panel-header">
+            <div>
+              <h3>Recent Loading</h3>
+              <p>Latest pallet activity.</p>
+            </div>
+            <button class="secondary-button" data-go="history">View All</button>
           </div>
-          <button class="secondary-button" data-go="history">View All</button>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Time</th>
+                  <th>Truck</th>
+                  <th>Customer</th>
+                  <th>Barcode</th>
+                  <th>Product</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody id="recentLoadingBody"></tbody>
+            </table>
+          </div>
         </div>
-        <div class="table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>Time</th>
-                <th>Truck</th>
-                <th>Customer</th>
-                <th>Barcode</th>
-                <th>Product</th>
-                <th>Status</th>
-              </tr>
-            </thead>
-            <tbody id="recentLoadingBody"></tbody>
-          </table>
-        </div>
-      </div>
     </section>
 
     <!-- SCAN SECTION -->
