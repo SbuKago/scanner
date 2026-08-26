@@ -24,7 +24,8 @@
     const AUTHORIZED_USERS = [
         "Sibusiso Makhonjwa",
         "Afection",
-        "Boitumelo"
+        "Boitumelo",
+        "Junior"
     ];
 
     /* =========================================================
@@ -690,41 +691,86 @@ function checkBarcode() {
     }
 
     /* =========================================================
-       LOAD CONFIRMATION
-       ========================================================= */
-    function showLoadConfirmation(product) {
-        $("loadConfirmationPanel")?.classList.remove("hidden");
+   LOAD CONFIRMATION
+   ========================================================= */
+function showLoadConfirmation(product) {
+    $("loadConfirmationPanel")?.classList.remove("hidden");
 
-        const cases = cleanNumber(product.casesPerPallet);
-        const unitsPerCase = cleanNumber(product.unitsPerCase);
-        const totalUnits = cases * unitsPerCase;
-
-        if ($("loadCases")) $("loadCases").value = cases || "";
-        if ($("loadQuantity")) $("loadQuantity").value = totalUnits || "";
-
-        if (!currentSession) return;
-
-        if ($("loadTruck")) $("loadTruck").value = currentSession.truck || "";
-        if ($("loadCustomer")) $("loadCustomer").value = currentSession.customer || "";
-        if ($("loadDelivery")) $("loadDelivery").value = currentSession.delivery || "";
-        if ($("loadRoute")) $("loadRoute").value = currentSession.route || "";
-        if ($("loadUser")) $("loadUser").value = currentSession.user || AUTHORIZED_USERS[0];
+    // Start with 1 pallet
+    if ($("loadPallets")) {
+        $("loadPallets").value = 1;
     }
+
+    // Calculate cases and units
+    calculatePalletTotals();
+
+    // Clear custom dates
+    if ($("loadSellBy")) {
+        $("loadSellBy").value = "";
+    }
+
+    if ($("loadBB")) {
+        $("loadBB").value = "";
+    }
+
+    // Session information
+    if (!currentSession) return;
+
+    if ($("loadTruck")) {
+        $("loadTruck").value = currentSession.truck || "";
+    }
+
+    if ($("loadCustomer")) {
+        $("loadCustomer").value = currentSession.customer || "";
+    }
+
+    if ($("loadDelivery")) {
+        $("loadDelivery").value = currentSession.delivery || "";
+    }
+
+    if ($("loadRoute")) {
+        $("loadRoute").value = currentSession.route || "";
+    }
+
+    if ($("loadUser")) {
+        $("loadUser").value =
+            currentSession.user || AUTHORIZED_USERS[0];
+    }
+}
 
     /* =========================================================
-       RECALCULATE
-       ========================================================= */
-    function recalculateUnits() {
-        if (!currentScannedProduct) return;
+   PALLET / CASE / UNIT CALCULATION
+   ========================================================= */
+function calculatePalletTotals() {
+    if (!currentScannedProduct) return;
 
-        const cases = parseInt($("loadCases")?.value || "0", 10) || 0;
-        const unitsPerCase = cleanNumber(currentScannedProduct.unitsPerCase);
-        const total = cases * unitsPerCase;
+    const pallets =
+        parseInt($("loadPallets")?.value || "0", 10) || 0;
 
-        if ($("loadQuantity")) {
-            $("loadQuantity").value = total;
-        }
+    const casesPerPallet =
+        cleanNumber(currentScannedProduct.casesPerPallet);
+
+    const unitsPerCase =
+        cleanNumber(currentScannedProduct.unitsPerCase);
+
+    // Pallets × Cases per pallet
+    const totalCases =
+        pallets * casesPerPallet;
+
+    // Total cases × Units per case
+    const totalUnits =
+        totalCases * unitsPerCase;
+
+    if ($("loadCases")) {
+        $("loadCases").value =
+            totalCases > 0 ? totalCases : "";
     }
+
+    if ($("loadQuantity")) {
+        $("loadQuantity").value =
+            totalUnits > 0 ? totalUnits : "";
+    }
+}
 
     /* =========================================================
        CONFIRM LOAD
@@ -1294,8 +1340,17 @@ function setupMenu() {
             event.preventDefault();
             $("loadConfirmationPanel")?.classList.add("hidden");
         });
-        $("loadCases")?.addEventListener("input", recalculateUnits);
-        $("loadCases")?.addEventListener("change", recalculateUnits);
+        /* LOAD CALCULATIONS */
+
+$("loadPallets")?.addEventListener(
+    "input",
+    calculatePalletTotals
+);
+
+$("loadPallets")?.addEventListener(
+    "change",
+    calculatePalletTotals
+);
 
         /* VERIFY */
         $("verifyButton")?.addEventListener("click", performVerify);

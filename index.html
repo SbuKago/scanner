@@ -5,565 +5,1498 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#172033">
+
   <title>Dispatch Barcode Tracker</title>
+
   <link rel="stylesheet" href="style.css">
 
-  <!-- Keep only one XLSX library -->
+  <!-- Excel export -->
   <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
-  <script src="https://unpkg.com/html5-qrcode" defer></script>
 
-  <!-- REMOVED app.js from here (Keep it at the bottom of the body) -->
+  <!-- Camera barcode scanner -->
+  <script src="https://unpkg.com/html5-qrcode" defer></script>
 </head>
 
 <body>
+
+  <!-- =====================================================
+         TOP BAR
+         ===================================================== -->
   <header class="topbar">
+
     <div>
       <h1>Dispatch Barcode Tracker</h1>
-      <p class="subtitle">Pallet loading & barcode verification</p>
+      <p class="subtitle">
+        Pallet Loading & Barcode Verification
+      </p>
     </div>
+
     <button id="menuButton" class="icon-button" type="button" aria-label="Open menu" aria-expanded="false"
       aria-controls="mainNav">
       ☰
     </button>
+
   </header>
 
+
+  <!-- =====================================================
+         APPLICATION NOTICE
+         ===================================================== -->
   <div id="appNotice" class="app-notice hidden"></div>
 
+
+  <!-- =====================================================
+         NAVIGATION
+         ===================================================== -->
   <nav id="mainNav" class="nav">
-    <button class="nav-button active" data-section="dashboard">Dashboard</button>
-    <button class="nav-button" data-section="scan">Scan Pallet</button>
-    <button class="nav-button" data-section="verify">Verify Barcode</button>
-    <button class="nav-button" data-section="history">Loading History</button>
-    <button class="nav-button" data-section="products">Product Master</button>
-    <button class="nav-button" data-section="problems">Barcode Problems</button>
-    <button class="nav-button" data-section="reports">Reports</button>
-    <button class="nav-button" data-section="settings">Settings</button>
+
+    <button class="nav-button active" data-section="dashboard">
+      Dashboard
+    </button>
+
+    <button class="nav-button" data-section="scan">
+      Scan Pallet
+    </button>
+
+    <button class="nav-button" data-section="verify">
+      Verify Barcode
+    </button>
+
+    <button class="nav-button" data-section="history">
+      Loading History
+    </button>
+
+    <button class="nav-button" data-section="products">
+      Product Master
+    </button>
+
+    <button class="nav-button" data-section="problems">
+      Barcode Problems
+    </button>
+
+    <button class="nav-button" data-section="reports">
+      Reports
+    </button>
+
+    <button class="nav-button" data-section="settings">
+      Settings
+    </button>
+
   </nav>
 
+
+  <!-- =====================================================
+         MAIN APPLICATION
+         ===================================================== -->
   <main class="container">
-    <!-- DASHBOARD SECTION -->
+
+
+    <!-- =================================================
+             DASHBOARD
+             ================================================= -->
     <section id="dashboard" class="page-section active">
+
       <div class="page-heading">
+
         <div>
           <h2>Dashboard</h2>
-          <p>Overview of today's dispatch loading.</p>
+
+          <p>
+            Overview of today's dispatch loading.
+          </p>
         </div>
+
         <div class="button-row">
-          <button class="secondary-button" data-go="verify">Verify Barcode</button>
-          <button id="dashboardScanButton" class="primary-button">Scan Pallet</button>
+
+          <button class="secondary-button" data-go="verify">
+            Verify Barcode
+          </button>
+
+          <button id="dashboardScanButton" class="primary-button">
+            Scan Pallet
+          </button>
+
         </div>
+
       </div>
 
+
+      <!-- DASHBOARD STATISTICS -->
       <div class="stat-grid">
+
         <article class="stat-card">
           <span>Pallets Loaded</span>
           <strong id="statPallets">0</strong>
         </article>
+
+
         <article class="stat-card success-card">
           <span>Successful Scans</span>
           <strong id="statValid">0</strong>
         </article>
+
+
         <article class="stat-card error-card">
           <span>Barcode Errors</span>
           <strong id="statErrors">0</strong>
         </article>
+
+
         <article class="stat-card warning-card">
           <span>Duplicate Scans</span>
           <strong id="statDuplicates">0</strong>
         </article>
+
+
         <article class="stat-card">
           <span>Customers</span>
           <strong id="statCustomers">0</strong>
         </article>
+
+
         <article class="stat-card">
           <span>Cases Loaded</span>
           <strong id="statCases">0</strong>
         </article>
+
       </div>
 
-      <div id="problemAlert" class="alert alert-warning hidden"></div>
 
+      <div id="problemAlert" class="alert alert-warning hidden">
+      </div>
+
+
+      <!-- SESSION -->
       <div class="panel">
+
         <h3>Session Management</h3>
-        <p class="help-text">End the current loading session to finalize records.</p>
+
+        <p class="help-text">
+          Manage the current loading session.
+        </p>
+
         <div class="button-row">
-          <button id="endCurrentSessionButton">
+
+          <button id="endCurrentSessionButton" class="danger-button">
             End Current Session
           </button>
-        </div>
-      </div> <!-- ADD THIS MISSING CLOSING TAG HERE -->
 
+        </div>
+
+      </div>
+
+
+      <!-- RECENT LOADING -->
       <div class="panel">
-        <h3>Data & Cache Controls</h3>
 
-        <div class="panel">
-          <div class="panel-header">
-            <div>
-              <h3>Recent Loading</h3>
-              <p>Latest pallet activity.</p>
-            </div>
-            <button class="secondary-button" data-go="history">View All</button>
+        <div class="panel-header">
+
+          <div>
+            <h3>Recent Loading</h3>
+
+            <p>
+              Latest pallet activity.
+            </p>
           </div>
-          <div class="table-wrap">
-            <table>
-              <thead>
-                <tr>
-                  <th>Time</th>
-                  <th>Truck</th>
-                  <th>Customer</th>
-                  <th>Barcode</th>
-                  <th>Product</th>
-                  <th>Status</th>
-                </tr>
-              </thead>
-              <tbody id="recentLoadingBody"></tbody>
-            </table>
-          </div>
+
+          <button class="secondary-button" data-go="history">
+            View All
+          </button>
+
         </div>
+
+
+        <div class="table-wrap">
+
+          <table>
+
+            <thead>
+
+              <tr>
+                <th>Time</th>
+                <th>Truck</th>
+                <th>Customer</th>
+                <th>Barcode</th>
+                <th>Product</th>
+                <th>Status</th>
+              </tr>
+
+            </thead>
+
+            <tbody id="recentLoadingBody"></tbody>
+
+          </table>
+
+        </div>
+
+      </div>
+
     </section>
 
-    <!-- SCAN SECTION -->
+
+
+    <!-- =================================================
+             SCAN PALLET
+             ================================================= -->
     <section id="scan" class="page-section">
+
       <div class="page-heading">
+
         <div>
+
           <h2>Scan Pallet</h2>
-          <p>Scan a barcode, outer barcode, or product/SKU code to validate and confirm loading.</p>
+
+          <p>
+            Scan a pallet barcode, outer barcode,
+            or product SKU.
+          </p>
+
         </div>
-        <span id="scanSessionBadge" class="badge badge-neutral">NO SESSION</span>
+
+        <span id="scanSessionBadge" class="badge badge-neutral">
+          NO SESSION
+        </span>
+
       </div>
 
+
+      <!-- NO SESSION WARNING -->
       <div id="noSessionWarning" class="alert alert-warning">
-        Start a loading session before scanning pallets to load on a truck.
-        <button id="startSessionFromScan" class="link-button">Start Session</button> or
-        <button class="link-button" data-go="verify">Verify Barcodes without Loading</button>
+
+        Start a loading session before scanning pallets.
+
+        <button id="startSessionFromScan" class="link-button">
+          Start Session
+        </button>
+
+        or
+
+        <button class="link-button" data-go="verify">
+          Verify Barcodes without Loading
+        </button>
+
       </div>
 
+
+      <!-- SCANNER GRID -->
       <div class="scanner-grid">
+
+
+        <!-- CAMERA -->
         <div class="panel">
+
           <div class="panel-header">
+
             <div>
+
               <h3>Camera Scanner</h3>
-              <p>Allow camera access when your browser asks.</p>
+
+              <p>
+                Scan a barcode using your camera.
+              </p>
+
             </div>
+
           </div>
 
-          <div class="camera-wrapper" style="text-align: center; margin: 15px auto;">
-            <button id="startCameraButton" type="button" class="btn btn-primary">📷 Start Camera</button>
-            <button id="stopCameraButton" type="button" class="btn btn-secondary hidden">Stop Camera</button>
 
-            <div id="reader" class="reader hidden"
-              style="width: 100%; max-width: 480px; min-height: 320px; margin: 15px auto; background: #000; border-radius: 8px; overflow: hidden;">
+          <div class="camera-wrapper" style="
+                            text-align:center;
+                            margin:15px auto;
+                        ">
+
+            <button id="startCameraButton" type="button" class="btn btn-primary">
+              📷 Start Camera
+            </button>
+
+            <button id="stopCameraButton" type="button" class="btn btn-secondary hidden">
+              Stop Camera
+            </button>
+
+
+            <div id="reader" class="reader hidden" style="
+                                width:100%;
+                                max-width:480px;
+                                min-height:320px;
+                                margin:15px auto;
+                                background:#000;
+                                border-radius:8px;
+                                overflow:hidden;
+                            ">
             </div>
+
           </div>
+
 
           <p class="help-text">
-            Camera scanning usually requires HTTPS or localhost. If the camera is unavailable,
-            use the manual field or a USB/Bluetooth scanner.
+
+            Camera scanning normally requires
+            HTTPS or localhost.
+
+            You can also use a USB/Bluetooth
+            barcode scanner.
+
           </p>
+
         </div>
 
+
+
+        <!-- MANUAL SCANNER -->
         <div class="panel">
-          <h3>Manual / Handheld Scanner</h3>
+
+          <h3>
+            Manual / Handheld Scanner
+          </h3>
+
           <p class="help-text">
-            Scans into this field using standard barcodes, outer barcodes, or SKU codes.
-            Pressing Enter will validate it.
+
+            Scan a barcode or type a product code.
+            Press Enter to check.
+
           </p>
 
-          <label for="barcodeInput">Pallet Barcode / Outer Barcode / SKU</label>
+
+          <label for="barcodeInput">
+            Pallet Barcode / Outer Barcode / SKU
+          </label>
+
+
           <div class="barcode-entry">
+
             <input id="barcodeInput" type="text" autocomplete="off" inputmode="text"
-              placeholder="Scan or type barcode, outer barcode, or SKU..." autofocus>
-            <button id="checkBarcodeButton" class="primary-button">Check & Load</button>
+              placeholder="Scan or type barcode..." autofocus>
+
+
+            <button id="checkBarcodeButton" class="primary-button">
+              Check & Load
+            </button>
+
           </div>
+
 
           <div class="quick-test">
-            <button id="demoValidButton" class="small-button">Test Valid Barcode</button>
-            <button id="demoInvalidButton" class="small-button">Test Invalid Barcode</button>
+
+            <button id="demoValidButton" class="small-button">
+              Test Valid Barcode
+            </button>
+
+            <button id="demoInvalidButton" class="small-button">
+              Test Invalid Barcode
+            </button>
+
           </div>
 
+
+          <!-- SCAN RESULT -->
           <div id="scanResult" class="scan-result empty">
-            <div class="result-icon">⌕</div>
-            <h3>Ready to Scan</h3>
-            <p>Scan or enter a pallet barcode, outer barcode, or SKU code.</p>
+
+            <div class="result-icon">
+              ⌕
+            </div>
+
+            <h3>
+              Ready to Scan
+            </h3>
+
+            <p>
+              Scan or enter a pallet barcode,
+              outer barcode, or SKU.
+            </p>
+
           </div>
+
         </div>
+
       </div>
 
-      <div id="duplicatePanel" class="alert alert-warning hidden"></div>
 
+      <!-- DUPLICATE MESSAGE -->
+      <div id="duplicatePanel" class="alert alert-warning hidden">
+      </div>
+
+
+
+      <!-- =================================================
+                 CONFIRM PALLET LOADING
+                 ================================================= -->
       <div id="loadConfirmationPanel" class="panel hidden">
+
+
         <div class="panel-header">
+
           <div>
-            <h3>Confirm Pallet Loading</h3>
-            <p>Check the product information before saving the pallet.</p>
+
+            <h3>
+              Confirm Pallet Loading
+            </h3>
+
+            <p>
+              Check the product and loading
+              information before saving.
+            </p>
+
           </div>
+
         </div>
 
+
+        <!-- PRODUCT SUMMARY -->
         <div id="loadProductSummary" class="product-summary">
-          <div class="summary-item">
-            <span class="label">Product Code</span>
-            <span id="summaryProductCode" class="value">-</span>
-          </div>
-          <div class="summary-item">
-            <span class="label">Description</span>
-            <span id="summaryDescription" class="value">-</span>
-          </div>
-          <div class="summary-item">
-            <span class="label">Outer Barcode</span>
-            <span id="summaryOuterBarcode" class="value">-</span>
-          </div>
+
 
           <div class="summary-item">
-            <span class="label">Barcode</span>
-            <span id="summaryBarcode" class="value">-</span>
-          </div>
-          <div class="summary-item">
-            <span class="label">Cases / Pallet</span>
-            <span id="summaryCasesPallet" class="value">-</span>
-          </div>
-          <div class="summary-item">
-            <span class="label">Units / Case</span>
-            <span id="summaryUnitsCase" class="value">-</span>
+
+            <span class="label">
+              Product Code
+            </span>
+
+            <span id="summaryProductCode" class="value">
+              -
+            </span>
+
           </div>
 
+
           <div class="summary-item">
-            <span class="label">Units / Pallet</span>
-            <span id="summaryUnitsPallet" class="value">-</span>
+
+            <span class="label">
+              Description
+            </span>
+
+            <span id="summaryDescription" class="value">
+              -
+            </span>
+
           </div>
+
+
           <div class="summary-item">
-            <span class="label">Sell By</span>
-            <span id="summarySellBy" class="value">-</span>
+
+            <span class="label">
+              Outer Barcode
+            </span>
+
+            <span id="summaryOuterBarcode" class="value">
+              -
+            </span>
+
           </div>
+
+
           <div class="summary-item">
-            <span class="label">Best Before (BB)</span>
-            <span id="summaryBB" class="value">-</span>
+
+            <span class="label">
+              Barcode
+            </span>
+
+            <span id="summaryBarcode" class="value">
+              -
+            </span>
+
           </div>
+
+
+          <div class="summary-item">
+
+            <span class="label">
+              Cases / Pallet
+            </span>
+
+            <span id="summaryCasesPallet" class="value">
+              -
+            </span>
+
+          </div>
+
+
+          <div class="summary-item">
+
+            <span class="label">
+              Units / Case
+            </span>
+
+            <span id="summaryUnitsCase" class="value">
+              -
+            </span>
+
+          </div>
+
+
+          <div class="summary-item">
+
+            <span class="label">
+              Units / Pallet
+            </span>
+
+            <span id="summaryUnitsPallet" class="value">
+              -
+            </span>
+
+          </div>
+
+
+          <div class="summary-item">
+
+            <span class="label">
+              Product Master Sell By
+            </span>
+
+            <span id="summarySellBy" class="value">
+              -
+            </span>
+
+          </div>
+
+
+          <div class="summary-item">
+
+            <span class="label">
+              Product Master BB
+            </span>
+
+            <span id="summaryBB" class="value">
+              -
+            </span>
+
+          </div>
+
         </div>
 
+
+
+        <!-- LOADING FORM -->
         <div class="form-grid">
+
+
+          <!-- TRUCK -->
           <div class="form-group">
-            <label for="loadTruck">Truck Registration</label>
+
+            <label for="loadTruck">
+              Truck Registration
+            </label>
+
             <input id="loadTruck" type="text" placeholder="e.g. CA 123 456">
+
           </div>
+
+
+          <!-- CUSTOMER -->
           <div class="form-group">
-            <label for="loadCustomer">Customer</label>
+
+            <label for="loadCustomer">
+              Customer
+            </label>
+
             <input id="loadCustomer" type="text" placeholder="Customer Name">
+
           </div>
+
+
+          <!-- DELIVERY -->
           <div class="form-group">
-            <label for="loadDelivery">Delivery Number</label>
+
+            <label for="loadDelivery">
+              Delivery Number
+            </label>
+
             <input id="loadDelivery" type="text" placeholder="e.g. DEL-10023">
+
           </div>
+
+
+          <!-- ROUTE -->
           <div class="form-group">
-            <label for="loadRoute">Route</label>
+
+            <label for="loadRoute">
+              Route
+            </label>
+
             <input id="loadRoute" type="text" placeholder="e.g. JHB Central">
+
           </div>
+
+
+
+          <!-- =================================================
+                         NEW: NUMBER OF PALLETS
+                         ================================================= -->
           <div class="form-group">
-            <label for="loadCases">Cases</label>
-            <input id="loadCases" type="number" min="1" placeholder="Cases">
+
+            <label for="loadPallets">
+              Number of Pallets
+            </label>
+
+            <input id="loadPallets" type="number" min="1" step="1" value="1" placeholder="Enter pallets">
+
+            <small class="help-text">
+              Enter the number of pallets being loaded.
+            </small>
+
           </div>
+
+
+
+          <!-- =================================================
+                         AUTOMATIC CASES
+                         ================================================= -->
           <div class="form-group">
-            <label for="loadQuantity">Units Quantity</label>
-            <input id="loadQuantity" type="number" min="1" placeholder="Calculated units">
+
+            <label for="loadCases">
+              Total Cases
+            </label>
+
+            <input id="loadCases" type="number" min="0" readonly placeholder="Calculated automatically">
+
+            <small class="help-text">
+              Pallets × Cases per pallet
+            </small>
+
           </div>
+
+
+
+          <!-- =================================================
+                         AUTOMATIC UNITS
+                         ================================================= -->
           <div class="form-group">
-            <label for="loadPalletType">Pallet Type</label>
+
+            <label for="loadQuantity">
+              Total Units
+            </label>
+
+            <input id="loadQuantity" type="number" min="0" readonly placeholder="Calculated automatically">
+
+            <small class="help-text">
+              Total cases × Units per case
+            </small>
+
+          </div>
+
+
+
+          <!-- =================================================
+                         CUSTOM SELL BY
+                         ================================================= -->
+          <div class="form-group">
+
+            <label for="loadSellBy">
+              Actual Sell By Date
+            </label>
+
+            <input id="loadSellBy" type="date">
+
+            <small class="help-text">
+              Enter the actual Sell By date
+              printed on the pallet/product.
+            </small>
+
+          </div>
+
+
+
+          <!-- =================================================
+                         CUSTOM BB
+                         ================================================= -->
+          <div class="form-group">
+
+            <label for="loadBB">
+              Actual BB Date
+            </label>
+
+            <input id="loadBB" type="date">
+
+            <small class="help-text">
+              Enter the actual Best Before date
+              printed on the pallet/product.
+            </small>
+
+          </div>
+
+
+
+          <!-- PALLET TYPE -->
+          <div class="form-group">
+
+            <label for="loadPalletType">
+              Pallet Type
+            </label>
+
             <input id="loadPalletType" type="text" placeholder="e.g. CHEP / Standard">
+
           </div>
+
+
+
+          <!-- LOADED BY -->
           <div class="form-group">
-            <label for="loadUser">Loaded By</label>
+
+            <label for="loadUser">
+              Loaded By
+            </label>
+
             <select id="loadUser">
-              <option value="Sibusiso">Sibusiso</option>
-              <option value="Afection">Afection</option>
-              <option value="Boitumelo">Boitumelo</option>
+
+              <option value=disable>
+                User
+              </option>
+
+              <option value="Sibusiso">
+                Sibusiso
+              </option>
+
+              <option value="Afection">
+                Afection
+              </option>
+
+              <option value="Boitumelo">
+                Boitumelo
+              </option>
+
+              <option value="junior">
+                Junior
+              </option>
+
             </select>
+
           </div>
+
         </div>
 
+
+
+        <!-- CONFIRM BUTTONS -->
         <div class="button-row end">
-          <button id="cancelLoadButton" class="secondary-button">Cancel</button>
-          <button id="confirmLoadButton" class="success-button">Confirm & Save Loading</button>
+
+          <button id="cancelLoadButton" type="button" class="secondary-button">
+            Cancel
+          </button>
+
+
+          <button id="confirmLoadButton" type="button" class="success-button">
+            Confirm & Save Loading
+          </button>
+
         </div>
+
       </div>
+
     </section>
 
-    <!-- VERIFY SECTION -->
+
+
+    <!-- =================================================
+             VERIFY BARCODE
+             ================================================= -->
     <section id="verify" class="page-section">
+
       <div class="page-heading">
+
         <div>
-          <h2>Verify Barcode</h2>
-          <p>Quick lookup without creating a loading transaction.</p>
+
+          <h2>
+            Verify Barcode
+          </h2>
+
+          <p>
+            Check a barcode without creating
+            a loading transaction.
+          </p>
+
         </div>
+
       </div>
+
+
       <div class="panel">
-        <label for="verifyInput">Enter Barcode, Outer Barcode, or SKU</label>
+
+        <label for="verifyInput">
+          Barcode / Outer Barcode / SKU
+        </label>
+
+
         <div class="barcode-entry">
+
           <input id="verifyInput" type="text" placeholder="Type or scan code...">
-          <button id="verifyButton" class="primary-button">Lookup</button>
+
+
+          <button id="verifyButton" class="primary-button">
+            Lookup
+          </button>
+
         </div>
-        <div id="verifyResult" class="scan-result empty" style="margin-top: 20px;">
-          <div class="result-icon">⌕</div>
-          <h3>Ready</h3>
-          <p>Lookup product information across all barcode types.</p>
+
+
+        <div id="verifyResult" class="scan-result empty" style="margin-top:20px;">
+
+          <div class="result-icon">
+            ⌕
+          </div>
+
+          <h3>
+            Ready
+          </h3>
+
+          <p>
+            Lookup product information.
+          </p>
+
         </div>
+
       </div>
+
     </section>
 
-    <!-- HISTORY SECTION -->
+
+
+    <!-- =================================================
+             LOADING HISTORY
+             ================================================= -->
     <section id="history" class="page-section">
+
       <div class="page-heading">
+
         <div>
-          <h2>Loading History</h2>
-          <p>Complete log of loaded pallets.</p>
+
+          <h2>
+            Loading History
+          </h2>
+
+          <p>
+            Complete log of loaded pallets.
+          </p>
+
         </div>
+
       </div>
 
+
       <div class="panel">
+
         <div class="table-wrap">
+
           <table>
+
             <thead>
+
               <tr>
+
                 <th>Date</th>
                 <th>Time</th>
                 <th>Truck</th>
                 <th>Customer</th>
                 <th>Delivery</th>
+                <th>Product Code</th>
                 <th>Barcode</th>
-                <th>Product Description</th>
+                <th>Outer Barcode</th>
+                <th>Product</th>
+                <th>Pallets</th>
                 <th>Cases</th>
                 <th>Units</th>
+                <th>Sell By</th>
+                <th>BB</th>
                 <th>Status</th>
                 <th>Loaded By</th>
+
               </tr>
+
             </thead>
+
+
             <tbody id="historyBody"></tbody>
+
           </table>
+
         </div>
+
       </div>
 
-      <button id="exportHistoryButton" class="btn btn-primary">
-        📊 Export History to Excel
-      </button>
+
+      <div class="button-row">
+
+        <button id="exportHistoryButton" class="primary-button">
+          📊 Export History to Excel
+        </button>
+
+      </div>
+
     </section>
 
-    <!-- PRODUCTS SECTION -->
+
+
+    <!-- =================================================
+             PRODUCT MASTER
+             ================================================= -->
     <section id="products" class="page-section">
+
       <div class="page-heading">
+
         <div>
-          <h2>Product Master</h2>
-          <p>List of authorized products with full product details, barcodes, outer barcodes, and SKUs.</p>
+
+          <h2>
+            Product Master
+          </h2>
+
+          <p>
+            Authorized products and barcode data.
+          </p>
+
         </div>
+
+
         <div class="button-row">
-          <button id="importExcelButton" class="secondary-button">Import Excel</button>
-          <input type="file" id="excelFileInput" accept=".xlsx, .xls" class="hidden">
-          <button id="loadDemoDataButton" class="primary-button">Reload Product Database</button>
+
+          <button id="importExcelButton" class="secondary-button">
+            Import Excel
+          </button>
+
+
+          <input type="file" id="excelFileInput" accept=".xlsx,.xls" class="hidden">
+
+
+          <button id="loadDemoDataButton" class="primary-button">
+            Reload Product Database
+          </button>
+
         </div>
+
       </div>
 
-      <div id="excelStatus" class="alert alert-info hidden"></div>
+
+      <div id="excelStatus" class="alert alert-info hidden">
+      </div>
+
 
       <div class="stat-grid compact">
+
         <article class="stat-card">
-          <span>Total Products</span>
-          <strong id="productCount">0</strong>
+
+          <span>
+            Total Products
+          </span>
+
+          <strong id="productCount">
+            0
+          </strong>
+
         </article>
+
+
         <article class="stat-card">
-          <span>Unique Barcodes</span>
-          <strong id="uniqueBarcodeCount">0</strong>
+
+          <span>
+            Unique Barcodes
+          </span>
+
+          <strong id="uniqueBarcodeCount">
+            0
+          </strong>
+
         </article>
+
       </div>
 
+
       <div class="panel">
+
         <div class="table-wrap">
+
           <table>
+
             <thead>
+
               <tr>
-                <th>Product Code / SKU</th>
+
+                <th>Product Code</th>
                 <th>Outer Barcode</th>
                 <th>Barcode</th>
-                <th>Product Description</th>
+                <th>Description</th>
                 <th>Pack Size</th>
                 <th>Sell By</th>
-                <th>Best Before (BB)</th>
+                <th>BB</th>
                 <th>Cases / Pallet</th>
                 <th>Units / Case</th>
-                <th>Units / Outer</th>
+
               </tr>
+
             </thead>
+
+
             <tbody id="productBody"></tbody>
+
           </table>
+
         </div>
+
       </div>
+
     </section>
 
-    <!-- PROBLEMS SECTION -->
+
+
+    <!-- =================================================
+             BARCODE PROBLEMS
+             ================================================= -->
     <section id="problems" class="page-section">
+
       <div class="page-heading">
+
         <div>
-          <h2>Barcode Problems</h2>
-          <p>Reported invalid, unreadable, or broken barcode issues.</p>
+
+          <h2>
+            Barcode Problems
+          </h2>
+
+          <p>
+            Report unreadable or incorrect barcodes.
+          </p>
+
         </div>
+
       </div>
+
+
       <div class="panel">
+
         <div class="table-wrap">
+
           <table>
+
             <thead>
+
               <tr>
+
                 <th>Date</th>
                 <th>Time</th>
                 <th>Barcode</th>
                 <th>Product</th>
-                <th>Problem Type</th>
+                <th>Problem</th>
                 <th>Comment</th>
                 <th>Reported By</th>
                 <th>Status</th>
-                <th>Actions</th>
+
               </tr>
+
             </thead>
+
+
             <tbody id="problemBody"></tbody>
+
           </table>
+
         </div>
+
       </div>
+
     </section>
 
-    <!-- REPORTS SECTION -->
+
+
+    <!-- =================================================
+             REPORTS
+             ================================================= -->
     <section id="reports" class="page-section">
+
       <div class="page-heading">
+
         <div>
-          <h2>Reports & Analytics</h2>
-          <p>Daily breakdown of dispatch metrics.</p>
+
+          <h2>
+            Reports & Analytics
+          </h2>
+
+          <p>
+            Daily dispatch loading metrics.
+          </p>
+
         </div>
+
       </div>
+
+
       <div class="panel">
+
         <div class="filter-bar">
+
+          <label for="reportDate">
+            Report Date
+          </label>
+
           <input type="date" id="reportDate">
+
         </div>
-        <div id="dailyReport" class="report-grid"></div>
+
+
+        <div id="dailyReport" class="report-grid">
+        </div>
+
       </div>
+
     </section>
 
-    <!-- SETTINGS SECTION -->
+
+
+    <!-- =================================================
+             SETTINGS
+             ================================================= -->
     <section id="settings" class="page-section">
+
       <div class="page-heading">
+
         <div>
-          <h2>Settings</h2>
-          <p>System configuration & user preferences.</p>
+
+          <h2>
+            Settings
+          </h2>
+
+          <p>
+            System configuration and controls.
+          </p>
+
         </div>
+
       </div>
 
+
+      <!-- SESSION -->
       <div class="panel">
-        <h3>Session Management</h3>
-        <p class="help-text">End the current loading session to finalize records.</p>
+
+        <h3>
+          Session Management
+        </h3>
+
+        <p class="help-text">
+          End the current loading session.
+        </p>
+
+
         <div class="button-row">
-          <button id="endCurrentSessionButton">
+
+          <button id="endCurrentSessionButton" class="danger-button">
             End Current Session
           </button>
+
         </div>
 
-        <div class="panel">
-          <h3>Data & Cache Controls</h3>
-          <p class="help-text">Clear local storage cache and reset stored loading logs and product data.</p>
-          <div class="button-row">
-            <button id="clearCacheSettingsButton" class="danger-button">Clear All Data & Reset Cache</button>
-          </div>
+      </div>
+
+
+      <!-- CACHE -->
+      <div class="panel">
+
+        <h3>
+          Data & Cache Controls
+        </h3>
+
+        <p class="help-text">
+          Clear stored application data.
+        </p>
+
+
+        <div class="button-row">
+
+          <button id="clearCacheSettingsButton" class="danger-button">
+            Clear All Data & Reset Cache
+          </button>
+
         </div>
 
-        <div class="panel">
-          <h3>Authorized Dispatch Users</h3>
-          <ul>
-            <li>Sibusiso Makhonjwa</li>
-            <li>Afection</li>
-            <li>Boitumelo</li>
-          </ul>
-        </div>
+      </div>
+
+
+      <!-- USERS -->
+      <div class="panel">
+
+        <h3>
+          Authorized Dispatch Users
+        </h3>
+
+
+        <ul>
+
+          <li>
+            Sibusiso Makhonjwa
+          </li>
+
+          <li>
+            Afection
+          </li>
+
+          <li>
+            Boitumelo
+          </li>
+
+        </ul>
+
+      </div>
+
     </section>
+
   </main>
 
-  <!-- MODALS -->
+
+
+  <!-- =====================================================
+         SESSION MODAL
+         ===================================================== -->
   <div id="sessionModal" class="modal hidden">
+
     <div class="modal-card">
+
+
       <div class="modal-header">
+
         <div>
-          <h2>Start Loading Session</h2>
-          <p>Enter truck and dispatch details for this batch.</p>
+
+          <h2>
+            Start Loading Session
+          </h2>
+
+          <p>
+            Enter the truck and dispatch details.
+          </p>
+
         </div>
-        <button id="closeSessionModal" class="icon-button">✕</button>
+
+
+        <button id="closeSessionModal" type="button" class="icon-button">
+          ✕
+        </button>
+
       </div>
+
+
       <div class="form-group">
-        <label for="sessionName">Session Title</label>
+
+        <label for="sessionName">
+          Session Title
+        </label>
+
         <input id="sessionName" type="text" placeholder="e.g. Morning Dispatch">
+
       </div>
+
+
       <div class="form-group">
-        <label for="sessionUser">User</label>
+
+        <label for="sessionUser">
+          User
+        </label>
+
         <select id="sessionUser">
-          <option value="Sibusiso Makhonjwa">Sibusiso Makhonjwa</option>
-          <option value="Afection">Afection</option>
-          <option value="Boitumelo">Boitumelo</option>
+
+          <option value="Sibusiso Makhonjwa">
+            Sibusiso Makhonjwa
+          </option>
+
+          <option value="Afection">
+            Afection
+          </option>
+
+          <option value="Boitumelo">
+            Boitumelo
+          </option>
+
         </select>
+
       </div>
+
+
       <div class="form-group">
-        <label for="sessionTruck">Truck Registration</label>
+
+        <label for="sessionTruck">
+          Truck Registration
+        </label>
+
         <input id="sessionTruck" type="text" placeholder="e.g. TRK-01-GP">
+
       </div>
+
+
       <div class="form-group">
-        <label for="sessionCustomer">Customer</label>
+
+        <label for="sessionCustomer">
+          Customer
+        </label>
+
         <input id="sessionCustomer" type="text" placeholder="Customer Name">
+
       </div>
+
+
       <div class="form-group">
-        <label for="sessionDelivery">Delivery Note Number</label>
+
+        <label for="sessionDelivery">
+          Delivery Note Number
+        </label>
+
         <input id="sessionDelivery" type="text" placeholder="e.g. DEL-99812">
+
       </div>
+
+
       <div class="form-group">
-        <label for="sessionRoute">Route</label>
+
+        <label for="sessionRoute">
+          Route
+        </label>
+
         <input id="sessionRoute" type="text" placeholder="e.g. JHB Central">
+
       </div>
+
+
       <div class="button-row end">
-        <button id="cancelSessionButton" class="secondary-button">Cancel</button>
-        <button id="startSessionButton" class="primary-button">Start Session</button>
+
+        <button id="cancelSessionButton" type="button" class="secondary-button">
+          Cancel
+        </button>
+
+
+        <button id="startSessionButton" type="button" class="primary-button">
+          Start Session
+        </button>
+
       </div>
+
     </div>
+
   </div>
 
+
+
+  <!-- =====================================================
+         BARCODE PROBLEM MODAL
+         ===================================================== -->
   <div id="problemModal" class="modal hidden">
+
     <div class="modal-card">
+
+
       <div class="modal-header">
+
         <div>
-          <h2>Report Barcode Issue</h2>
-          <p>Log a problem with an unreadable or incorrect barcode.</p>
+
+          <h2>
+            Report Barcode Issue
+          </h2>
+
+          <p>
+            Report an unreadable or incorrect barcode.
+          </p>
+
         </div>
-        <button id="closeProblemModal" class="icon-button">✕</button>
+
+
+        <button id="closeProblemModal" type="button" class="icon-button">
+          ✕
+        </button>
+
       </div>
-      <div id="problemBarcodePreview" class="barcode-preview"></div>
+
+
+      <div id="problemBarcodePreview" class="barcode-preview">
+      </div>
+
+
       <div class="form-group">
-        <label for="problemType">Problem Type</label>
+
+        <label for="problemType">
+          Problem Type
+        </label>
+
         <select id="problemType">
-          <option value="Unrecognized Barcode">Unrecognized Barcode</option>
-          <option value="Damaged / Unscannable">Damaged / Unscannable</option>
-          <option value="Duplicate Scan">Duplicate Scan</option>
-          <option value="Wrong Master Data">Wrong Master Data</option>
+
+          <option value="Unrecognized Barcode">
+            Unrecognized Barcode
+          </option>
+
+          <option value="Damaged / Unscannable">
+            Damaged / Unscannable
+          </option>
+
+          <option value="Duplicate Scan">
+            Duplicate Scan
+          </option>
+
+          <option value="Wrong Master Data">
+            Wrong Master Data
+          </option>
+
         </select>
+
       </div>
+
+
       <div class="form-group">
-        <label for="problemComment">Comments</label>
-        <textarea id="problemComment" rows="3" placeholder="Additional details..."></textarea>
+
+        <label for="problemComment">
+          Comments
+        </label>
+
+        <textarea id="problemComment" rows="3" placeholder="Additional details...">
+                </textarea>
+
       </div>
+
+
       <div class="form-group">
-        <label for="problemReporter">Reported By</label>
+
+        <label for="problemReporter">
+          Reported By
+        </label>
+
         <select id="problemReporter">
-          <option value="Sibusiso Makhonjwa">Sibusiso Makhonjwa</option>
-          <option value="Afection">Afection</option>
-          <option value="Boitumelo">Boitumelo</option>
+
+          <option value="Sibusiso Makhonjwa">
+            Sibusiso Makhonjwa
+          </option>
+
+          <option value="Afection">
+            Afection
+          </option>
+
+          <option value="Boitumelo">
+            Boitumelo
+          </option>
+
         </select>
+
       </div>
+
+
       <div class="button-row end">
-        <button id="cancelProblemButton" class="secondary-button">Cancel</button>
-        <button id="saveProblemButton" class="danger-button">Submit Problem Report</button>
+
+        <button id="cancelProblemButton" type="button" class="secondary-button">
+          Cancel
+        </button>
+
+
+        <button id="saveProblemButton" type="button" class="danger-button">
+          Submit Problem Report
+        </button>
+
       </div>
+
     </div>
+
   </div>
 
-  <div id="toast" class="toast hidden"></div>
 
+
+  <!-- =====================================================
+         TOAST
+         ===================================================== -->
+  <div id="toast" class="toast hidden">
+  </div>
+
+
+
+  <!-- =====================================================
+         APP JAVASCRIPT
+         ===================================================== -->
   <script src="app.js"></script>
+
 </body>
 
 </html>
