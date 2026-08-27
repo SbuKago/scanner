@@ -741,34 +741,35 @@ function showLoadConfirmation(product) {
     /* =========================================================
    PALLET / CASE / UNIT CALCULATION
    ========================================================= */
+
+// Calculates Cases and Units based on Pallet input
 function calculatePalletTotals() {
     if (!currentScannedProduct) return;
 
-    const pallets =
-        parseInt($("loadPallets")?.value || "0", 10) || 0;
-
-    const casesPerPallet =
-        cleanNumber(currentScannedProduct.casesPerPallet);
-
-    const unitsPerCase =
-        cleanNumber(currentScannedProduct.unitsPerCase);
-
-    // Pallets × Cases per pallet
-    const totalCases =
-        pallets * casesPerPallet;
-
-    // Total cases × Units per case
-    const totalUnits =
-        totalCases * unitsPerCase;
+    const pallets = parseInt($("loadPallets")?.value || "0", 10) || 0;
+    const casesPerPallet = cleanNumber(currentScannedProduct.casesPerPallet);
+    
+    const totalCases = pallets * casesPerPallet;
 
     if ($("loadCases")) {
-        $("loadCases").value =
-            totalCases > 0 ? totalCases : "";
+        $("loadCases").value = totalCases > 0 ? totalCases : "";
     }
 
+    // Recalculate total units based on updated cases
+    calculateUnitTotals();
+}
+
+// Calculates Units based on current Cases input (handles custom case values)
+function calculateUnitTotals() {
+    if (!currentScannedProduct) return;
+
+    const cases = parseInt($("loadCases")?.value || "0", 10) || 0;
+    const unitsPerCase = cleanNumber(currentScannedProduct.unitsPerCase);
+
+    const totalUnits = cases * unitsPerCase;
+
     if ($("loadQuantity")) {
-        $("loadQuantity").value =
-            totalUnits > 0 ? totalUnits : "";
+        $("loadQuantity").value = totalUnits > 0 ? totalUnits : "";
     }
 }
 
@@ -1315,6 +1316,14 @@ function setupMenu() {
                 }
             });
         });
+
+/* LOAD CALCULATIONS */
+$("loadPallets")?.addEventListener("input", calculatePalletTotals);
+$("loadPallets")?.addEventListener("change", calculatePalletTotals);
+
+// Recalculate total units when cases are edited manually
+$("loadCases")?.addEventListener("input", calculateUnitTotals);
+$("loadCases")?.addEventListener("change", calculateUnitTotals); 
 
         /* INTERNAL LINKING (DATA-GO BUTTONS) */
         document.querySelectorAll("[data-go]").forEach(button => {
