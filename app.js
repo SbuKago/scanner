@@ -208,6 +208,7 @@ const PRODUCT_MASTER_TSV = `Product Code|Outer Barcode|Barcode|Product|Pack size
     let currentScannedProduct = null;
     let currentScannedBarcode = "";
     let html5QrCode = null;
+    let verifyQrCode = null;
 
     /* =========================================================
        BASIC HELPERS
@@ -435,46 +436,36 @@ function generateId() {
        START SESSION
        ========================================================= */
     function startSession() {
-    const sessionName =
-        $("sessionName")?.value?.trim() || "Dispatch";
+        // Never overwrite an active session just because the modal is opened again.
+        if (currentSession) {
+            updateSessionUI();
+            $("sessionModal")?.classList.add("hidden");
+            showToast("A loading session is already active. End it before starting a new one.", "warning");
+            return;
+        }
 
-    const sessionUser =
-        $("sessionUser")?.value?.trim() || AUTHORIZED_USERS[0];
+        const sessionName = $("sessionName")?.value?.trim() || "Dispatch";
+        const sessionUser = $("sessionUser")?.value?.trim() || AUTHORIZED_USERS[0];
+        const truck = $("sessionTruck")?.value?.trim() || "TRK-01-GP";
+        const customer = $("sessionCustomer")?.value?.trim() || "General Dispatch";
+        const delivery = $("sessionDelivery")?.value?.trim() || "DEL-001";
 
-    const truck =
-        $("sessionTruck")?.value?.trim() || "TRK-01-GP";
+        currentSession = {
+            id: generateId(),
+            name: sessionName,
+            user: sessionUser,
+            truck: truck,
+            customer: customer,
+            delivery: delivery,
+            startedAt: new Date().toISOString()
+        };
 
-    const customer =
-        $("sessionCustomer")?.value?.trim() || "General Dispatch";
+        saveStorage(STORAGE_KEYS.session, currentSession);
+        updateSessionUI();
+        $("sessionModal")?.classList.add("hidden");
 
-    const delivery =
-        $("sessionDelivery")?.value?.trim() || "DEL-001";
-
-    const route =
-        $("sessionRoute")?.value?.trim() || "Main Route";
-
-    currentSession = {
-        id: generateId(),
-        name: sessionName,
-        user: sessionUser,
-        truck: truck,
-        customer: customer,
-        delivery: delivery,
-        route: route,
-        startedAt: new Date().toISOString()
-    };
-
-    saveStorage(STORAGE_KEYS.session, currentSession);
-
-    updateSessionUI();
-
-    $("sessionModal")?.classList.add("hidden");
-
-    showToast(
-        "Loading session started successfully.",
-        "success"
-    );
-}
+        showToast("Loading session started successfully.", "success");
+    }
 
     /* =========================================================
        END SESSION
@@ -696,46 +687,24 @@ function checkBarcode() {
 function showLoadConfirmation(product) {
     $("loadConfirmationPanel")?.classList.remove("hidden");
 
-    // Start with 1 pallet
     if ($("loadPallets")) {
         $("loadPallets").value = 1;
     }
 
-    // Calculate cases and units
     calculatePalletTotals();
 
-    // Clear custom dates
-    if ($("loadSellBy")) {
-        $("loadSellBy").value = "";
+    // One actual Sell By / BB date for this load.
+    if ($("loadSellByBbDate")) {
+        $("loadSellByBbDate").value = "";
     }
 
-    if ($("loadBB")) {
-        $("loadBB").value = "";
-    }
-
-    // Session information
+    // Always take the session details from the active session.
     if (!currentSession) return;
 
-    if ($("loadTruck")) {
-        $("loadTruck").value = currentSession.truck || "";
-    }
-
-    if ($("loadCustomer")) {
-        $("loadCustomer").value = currentSession.customer || "";
-    }
-
-    if ($("loadDelivery")) {
-        $("loadDelivery").value = currentSession.delivery || "";
-    }
-
-    if ($("loadRoute")) {
-        $("loadRoute").value = currentSession.route || "";
-    }
-
-    if ($("loadUser")) {
-        $("loadUser").value =
-            currentSession.user || AUTHORIZED_USERS[0];
-    }
+    if ($("loadTruck")) $("loadTruck").value = currentSession.truck || "";
+    if ($("loadCustomer")) $("loadCustomer").value = currentSession.customer || "";
+    if ($("loadDelivery")) $("loadDelivery").value = currentSession.delivery || "";
+    if ($("loadUser")) $("loadUser").value = currentSession.user || AUTHORIZED_USERS[0];
 }
 
     /* =========================================================
@@ -782,84 +751,71 @@ function calculateUnitTotals() {
             return;
         }
 
-        if (!currentSession) {
-            showToast("There is no active loading session.", "warning");
+        if (!currentSession || !currentSession.id) {
+            showToast("There is no active loading session. Start a session first.", "warning");
             return;
         }
 
-        const duplicateCount = loadingRecords.filter(
-        record =>
-        normalizeCode(record.productCode) ===
-        normalizeCode(currentScannedProduct.productCode)
+        // Snapshot the active session BEFORE changing anything else.
+        // This guarantees the pallet record uses the same session details.
+        const sessionSnapshot = { ...currentSession };
+
+        const pallets = Math.max(0, parseInt($("loadPallets")?.value || "0", 10) || 0);
+        const cases = Math.max(0, parseInt($("loadCases")?.value || "0", 10) || 0);
+        const units = Math.max(0, parseInt($("loadQuantity")?.value || "0", 10) || 0);
+        const sellByBbDate = $("loadSellByBbDate")?.value || "";
+
+        if (pallets === 0) {
+            showToast("Enter the number of pallets before saving.", "warning");
+            $("loadPallets")?.focus();
+            return;
+        }
+
+        if (cases === 0) {
+            showToast("Enter the actual number of cases before saving.", "warning");
+            $("loadCases")?.focus();
+            return;
+        }
+
+        const duplicateCount = loadingRecords.filter(record =>
+            normalizeCode(record.barcode || record.scannedCode || "") === normalizeCode(currentScannedBarcode)
         ).length;
 
         const record = {
-        id: crypto?.randomUUID
-        ? crypto.randomUUID()
-        : String(Date.now()),
-
-    date: getToday(),
-    time: new Date().toLocaleTimeString("en-ZA"),
-
-    truck: $("loadTruck")?.value ||
-        currentSession.truck ||
-        "",
-
-    customer: $("loadCustomer")?.value ||
-        currentSession.customer ||
-        "",
-
-    delivery: $("loadDelivery")?.value ||
-        currentSession.delivery ||
-        "",
-
-    route: $("loadRoute")?.value ||
-        currentSession.route ||
-        "",
-
-    productCode: currentScannedProduct.productCode,
-
-    barcode: currentScannedProduct.barcode,
-
-    outerBarcode:
-        getEffectiveOuterBarcode(currentScannedProduct),
-
-    product:
-        getProductDescription(currentScannedProduct),
-
-    packSize:
-        currentScannedProduct.packSize,
-
-    sellBy:
-        currentScannedProduct.sellBy,
-
-    bb:
-        currentScannedProduct.bb,
-
-    cases:
-        $("loadCases")?.value || "0",
-
-    quantity:
-        $("loadQuantity")?.value || "0",
-
-    status: "LOADED",
-
-    loadedBy:
-        $("loadUser")?.value ||
-        currentSession.user ||
-        AUTHORIZED_USERS[0],
-
-    sessionId: currentSession.id,
-
-    // NEW
-    isDuplicate: duplicateCount > 0,
-
-    // Number of previous scans before this one
-    previousScanCount: duplicateCount
-};
+            id: generateId(),
+            date: getToday(),
+            time: new Date().toLocaleTimeString("en-ZA"),
+            truck: sessionSnapshot.truck || "",
+            customer: sessionSnapshot.customer || "",
+            delivery: sessionSnapshot.delivery || "",
+            productCode: currentScannedProduct.productCode,
+            barcode: currentScannedProduct.barcode,
+            outerBarcode: getEffectiveOuterBarcode(currentScannedProduct),
+            product: getProductDescription(currentScannedProduct),
+            packSize: currentScannedProduct.packSize,
+            sellByBbDate: sellByBbDate,
+            // Keep legacy fields for old exports/records, but use the single new date field.
+            sellBy: sellByBbDate,
+            bb: sellByBbDate,
+            pallets: pallets,
+            cases: cases,
+            quantity: units,
+            status: "LOADED",
+            loadedBy: $("loadUser")?.value || sessionSnapshot.user || AUTHORIZED_USERS[0],
+            sessionId: sessionSnapshot.id,
+            sessionName: sessionSnapshot.name || "Dispatch",
+            isDuplicate: duplicateCount > 0,
+            previousScanCount: duplicateCount
+        };
 
         loadingRecords.push(record);
         saveStorage(STORAGE_KEYS.loading, loadingRecords);
+
+        // IMPORTANT: do NOT clear currentSession here.
+        // The session remains active until the user explicitly ends it.
+        currentSession = sessionSnapshot;
+        saveStorage(STORAGE_KEYS.session, currentSession);
+        updateSessionUI();
 
         currentScannedProduct = null;
         currentScannedBarcode = "";
@@ -867,22 +823,10 @@ function calculateUnitTotals() {
         if ($("barcodeInput")) $("barcodeInput").value = "";
         $("loadConfirmationPanel")?.classList.add("hidden");
 
-        showToast("Pallet successfully logged.", "success");
+        showToast("Pallet successfully logged. Session remains active.", "success");
         renderLoadingHistory();
         updateDashboard();
     }
-
-    // Inside startSession()
-    currentSession = {
-        id: generateId(),
-        // ... rest of session data
-    };
-
-    // Inside confirmLoad()
-    const record = {
-        id: generateId(),
-        // ... rest of record data
-    };
 
     /* =========================================================
        VERIFY
@@ -960,33 +904,82 @@ function calculateUnitTotals() {
     }
 
     /* =========================================================
-       HISTORY TABLE
-       ========================================================= */
-    function renderLoadingHistory() {
-        const body = $("historyBody");
-        if (!body) return;
+   HISTORY TABLE
+   ========================================================= */
 
-        if (!loadingRecords.length) {
-            body.innerHTML = `<tr><td colspan="11" style="text-align:center;">No loading history available.</td></tr>`;
-            return;
-        }
+/* =========================================================
+   FORMAT HISTORY DATE
+   Converts:
+   2026-09-03
+   into:
+   03/09/2026
+   ========================================================= */
+function formatHistoryDate(value) {
 
-        body.innerHTML = loadingRecords.slice().reverse().map(record => `
-            <tr>
-                <td>${escapeHtml(record.date)}</td>
-                <td>${escapeHtml(record.time)}</td>
-                <td>${escapeHtml(record.truck)}</td>
-                <td>${escapeHtml(record.customer)}</td>
-                <td>${escapeHtml(record.delivery)}</td>
-                <td><code>${escapeHtml(record.productCode)}</code></td>
-                <td><code>${escapeHtml(record.barcode)}</code></td>
-                <td><code>${escapeHtml(record.outerBarcode)}</code></td>
-                <td>${escapeHtml(record.product)}</td>
-                <td>${escapeHtml(record.cases)}</td>
-                <td>${escapeHtml(record.quantity)}</td>
-            </tr>
-        `).join("");
+    if (
+        value === null ||
+        value === undefined ||
+        String(value).trim() === ""
+    ) {
+        return "-";
     }
+
+    const text = String(value).trim();
+
+    // Already DD/MM/YYYY
+    if (/^\d{2}\/\d{2}\/\d{4}$/.test(text)) {
+        return text;
+    }
+
+    // YYYY-MM-DD
+    const match = text.match(
+        /^(\d{4})-(\d{2})-(\d{2})$/
+    );
+
+    if (match) {
+        const year = match[1];
+        const month = match[2];
+        const day = match[3];
+
+        return `${day}/${month}/${year}`;
+    }
+
+    // Fallback for unexpected date formats
+    return text;
+}
+
+function renderLoadingHistory() {
+    const body = $("historyBody");
+    if (!body) return;
+
+    if (!Array.isArray(loadingRecords) || loadingRecords.length === 0) {
+        body.innerHTML = `<tr><td colspan="15" style="text-align:center;">No loading history available.</td></tr>`;
+        return;
+    }
+
+    body.innerHTML = loadingRecords.slice().reverse().map(record => {
+        const dateValue = record.sellByBbDate || record.sellBy || record.bb || "";
+        return `
+            <tr>
+                <td class="history-date">${escapeHtml(formatHistoryDate(record.date))}</td>
+                <td>${escapeHtml(record.time || "-")}</td>
+                <td>${escapeHtml(record.truck || "-")}</td>
+                <td>${escapeHtml(record.customer || "-")}</td>
+                <td>${escapeHtml(record.delivery || "-")}</td>
+                <td><code>${escapeHtml(record.productCode || "-")}</code></td>
+                <td><code>${escapeHtml(record.barcode || "-")}</code></td>
+                <td><code>${escapeHtml(record.outerBarcode || "-")}</code></td>
+                <td>${escapeHtml(record.product || "-")}</td>
+                <td>${escapeHtml(record.pallets ?? "0")}</td>
+                <td>${escapeHtml(record.cases ?? "0")}</td>
+                <td>${escapeHtml(record.quantity ?? "0")}</td>
+                <td>${escapeHtml(formatHistoryDate(dateValue))}</td>
+                <td><span class="status-badge">${escapeHtml(record.status || "-")}</span></td>
+                <td>${escapeHtml(record.loadedBy || "-")}</td>
+            </tr>
+        `;
+    }).join("");
+}
 
     /* =========================================================
        EXPORT HISTORY TO EXCEL
@@ -999,7 +992,6 @@ function calculateUnitTotals() {
 
         if (typeof XLSX === "undefined") {
             showToast("Excel export library is not loaded.", "error");
-            console.error("XLSX library is missing.");
             return;
         }
 
@@ -1009,27 +1001,25 @@ function calculateUnitTotals() {
             Truck: record.truck || "",
             Customer: record.customer || "",
             Delivery: record.delivery || "",
-            Route: record.route || "",
             "Product Code / SKU": record.productCode || "",
             Barcode: record.barcode || "",
             "Outer Barcode": record.outerBarcode || "",
             Product: record.product || "",
-            "Pack Size": record.packSize || "",
-            "Sell By": record.sellBy || "",
-            BB: record.bb || "",
-            Cases: record.cases || "",
-            Quantity: record.quantity || "",
+            Pallets: record.pallets ?? "",
+            Cases: record.cases ?? "",
+            Units: record.quantity ?? "",
+            "Sell By / BB": record.sellByBbDate || record.sellBy || record.bb || "",
             Status: record.status || "",
             "Loaded By": record.loadedBy || "",
-            "Session ID": record.sessionId || ""
+            "Session ID": record.sessionId || "",
+            "Session Name": record.sessionName || ""
         }));
 
         const worksheet = XLSX.utils.json_to_sheet(exportData);
         const workbook = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(workbook, worksheet, "Loading History");
 
-        const date = getToday();
-        XLSX.writeFile(workbook, `Dispatch_Loading_History_${date}.xlsx`);
+        XLSX.writeFile(workbook, `Dispatch_Loading_History_${getToday()}.xlsx`);
         showToast("Loading history exported to Excel.", "success");
     }
 
@@ -1058,9 +1048,13 @@ function calculateUnitTotals() {
        DASHBOARD
        ========================================================= */
     function updateDashboard() {
-        if ($("statPallets")) $("statPallets").textContent = loadingRecords.length;
+        if ($("statPallets")) {
+            const totalPallets = loadingRecords.reduce((sum, r) => sum + (parseInt(r.pallets, 10) || 0), 0);
+            $("statPallets").textContent = totalPallets;
+        }
         if ($("statValid")) $("statValid").textContent = loadingRecords.filter(r => r.status === "LOADED").length;
         if ($("statErrors")) $("statErrors").textContent = barcodeProblems.length;
+        if ($("statDuplicates")) $("statDuplicates").textContent = loadingRecords.filter(r => r.isDuplicate).length;
 
         if ($("statCases")) {
             const totalCases = loadingRecords.reduce((sum, record) => sum + (parseInt(record.cases, 10) || 0), 0);
@@ -1217,6 +1211,71 @@ function calculateUnitTotals() {
     }
 
     /* =========================================================
+       VERIFY CAMERA
+       ========================================================= */
+    async function startVerifyCamera() {
+        const reader = $("verifyReader");
+        if (!reader) {
+            showToast("Verify camera reader was not found.", "error");
+            return;
+        }
+
+        if (typeof Html5Qrcode === "undefined") {
+            showToast("Barcode scanner library is not loaded.", "error");
+            return;
+        }
+
+        try {
+            if (verifyQrCode) await stopVerifyCamera();
+
+            reader.classList.remove("hidden");
+            reader.style.display = "block";
+            $("startVerifyCameraButton")?.classList.add("hidden");
+            $("stopVerifyCameraButton")?.classList.remove("hidden");
+
+            verifyQrCode = new Html5Qrcode("verifyReader");
+
+            const config = {
+                fps: 15,
+                qrbox: { width: 250, height: 180 }
+            };
+
+            const success = async decodedText => {
+                if ($("verifyInput")) $("verifyInput").value = decodedText;
+                await stopVerifyCamera();
+                performVerify();
+            };
+
+            await verifyQrCode.start({ facingMode: "environment" }, config, success);
+        } catch (error) {
+            console.error("Verify camera error:", error);
+            await stopVerifyCamera();
+            showToast("Unable to access the verification camera.", "error");
+        }
+    }
+
+    async function stopVerifyCamera() {
+        try {
+            if (verifyQrCode && verifyQrCode.isScanning) {
+                await verifyQrCode.stop();
+            }
+        } catch (error) {
+            console.warn("Verify camera stop:", error);
+        } finally {
+            try {
+                verifyQrCode?.clear();
+            } catch (error) {
+                console.warn("Verify camera clear:", error);
+            }
+            verifyQrCode = null;
+            $("verifyReader")?.classList.add("hidden");
+            if ($("verifyReader")) $("verifyReader").style.display = "none";
+            $("startVerifyCameraButton")?.classList.remove("hidden");
+            $("stopVerifyCameraButton")?.classList.add("hidden");
+        }
+    }
+
+    /* =========================================================
        MENU
        ========================================================= */
     /* =========================================================
@@ -1318,12 +1377,10 @@ function setupMenu() {
         });
 
 /* LOAD CALCULATIONS */
-$("loadPallets")?.addEventListener("input", calculatePalletTotals);
-$("loadPallets")?.addEventListener("change", calculatePalletTotals);
-
-// Recalculate total units when cases are edited manually
-$("loadCases")?.addEventListener("input", calculateUnitTotals);
-$("loadCases")?.addEventListener("change", calculateUnitTotals); 
+        $("loadPallets")?.addEventListener("input", calculatePalletTotals);
+        $("loadPallets")?.addEventListener("change", calculatePalletTotals);
+        $("loadCases")?.addEventListener("input", calculateUnitTotals);
+        $("loadCases")?.addEventListener("change", calculateUnitTotals);
 
         /* INTERNAL LINKING (DATA-GO BUTTONS) */
         document.querySelectorAll("[data-go]").forEach(button => {
@@ -1349,18 +1406,6 @@ $("loadCases")?.addEventListener("change", calculateUnitTotals);
             event.preventDefault();
             $("loadConfirmationPanel")?.classList.add("hidden");
         });
-        /* LOAD CALCULATIONS */
-
-$("loadPallets")?.addEventListener(
-    "input",
-    calculatePalletTotals
-);
-
-$("loadPallets")?.addEventListener(
-    "change",
-    calculatePalletTotals
-);
-
         /* VERIFY */
         $("verifyButton")?.addEventListener("click", performVerify);
         $("verifyInput")?.addEventListener("keydown", event => {
@@ -1387,17 +1432,21 @@ $("loadPallets")?.addEventListener(
         });
 
         /* END CURRENT SESSION */
-        const endBtn = document.getElementById("endCurrentSessionButton");
-if (endBtn) {
-    // Remove duplicate listeners before binding
-    endBtn.removeEventListener("click", endSession);
-    endBtn.addEventListener("click", endSession);
-}
+        document.querySelectorAll(".end-session-button").forEach(button => {
+            button.addEventListener("click", endSession);
+        });
+        // Backwards compatibility if an older HTML still has the original ID.
+        const legacyEndButton = document.getElementById("endCurrentSessionButton");
+        if (legacyEndButton && !legacyEndButton.classList.contains("end-session-button")) {
+            legacyEndButton.addEventListener("click", endSession);
+        }
 
         /* OTHER LISTENERS */
         $("exportHistoryButton")?.addEventListener("click", exportHistoryToExcel);
         $("startCameraButton")?.addEventListener("click", startCamera);
         $("stopCameraButton")?.addEventListener("click", stopCamera);
+        $("startVerifyCameraButton")?.addEventListener("click", startVerifyCamera);
+        $("stopVerifyCameraButton")?.addEventListener("click", stopVerifyCamera);
         $("clearHistoryButton")?.addEventListener("click", clearHistory);
         $("clearCacheButton")?.addEventListener("click", clearCacheAndReset);
         $("clearCacheSettingsButton")?.addEventListener("click", clearCacheAndReset);

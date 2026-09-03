@@ -177,7 +177,7 @@
 
         <div class="button-row">
 
-          <button id="endCurrentSessionButton" class="danger-button">
+          <button id="endCurrentSessionButtonDashboard" class="danger-button end-session-button">
             End Current Session
           </button>
 
@@ -605,17 +605,6 @@
           </div>
 
 
-          <!-- ROUTE -->
-          <div class="form-group">
-
-            <label for="loadRoute">
-              Route
-            </label>
-
-            <input id="loadRoute" type="text" placeholder="e.g. JHB Central">
-
-          </div>
-
 
 
           <!-- =================================================
@@ -664,55 +653,12 @@
 
 
 
-          <!-- =================================================
-                         CUSTOM SELL BY
-                         ================================================= -->
+          <!-- REMOVED: Pallet Type and Route fields -->
+
+          <!-- CONSOLIDATED DATE FIELD -->
           <div class="form-group">
-
-            <label for="loadSellBy">
-              Actual Sell By Date
-            </label>
-
-            <input id="loadSellBy" type="date">
-
-            <small class="help-text">
-              Enter the actual Sell By date
-              printed on the pallet/product.
-            </small>
-
-          </div>
-
-
-
-          <!-- =================================================
-                         CUSTOM BB
-                         ================================================= -->
-          <div class="form-group">
-
-            <label for="loadBB">
-              Actual BB Date
-            </label>
-
-            <input id="loadBB" type="date">
-
-            <small class="help-text">
-              Enter the actual Best Before date
-              printed on the pallet/product.
-            </small>
-
-          </div>
-
-
-
-          <!-- PALLET TYPE -->
-          <div class="form-group">
-
-            <label for="loadPalletType">
-              Pallet Type
-            </label>
-
-            <input id="loadPalletType" type="text" placeholder="e.g. CHEP / Standard">
-
+            <label for="loadSellByBbDate">Sell By / Best Before Date</label>
+            <input id="loadSellByBbDate" type="date">
           </div>
 
 
@@ -794,6 +740,19 @@
 
 
       <div class="panel">
+
+        <div class="panel-header">
+          <div>
+            <h3>Camera Scanner</h3>
+            <p class="help-text">Scan a barcode with your camera to verify it.</p>
+          </div>
+        </div>
+
+        <div class="camera-wrapper" style="text-align:center;margin:15px auto;">
+          <button id="startVerifyCameraButton" type="button" class="btn btn-primary">📷 Start Camera</button>
+          <button id="stopVerifyCameraButton" type="button" class="btn btn-secondary hidden">Stop Camera</button>
+          <div id="verifyReader" class="reader hidden" style="width:100%;max-width:480px;min-height:320px;margin:15px auto;background:#000;border-radius:8px;overflow:hidden;"></div>
+        </div>
 
         <label for="verifyInput">
           Barcode / Outer Barcode / SKU
@@ -878,8 +837,7 @@
                 <th>Pallets</th>
                 <th>Cases</th>
                 <th>Units</th>
-                <th>Sell By</th>
-                <th>BB</th>
+                <th>Sell By / BB</th>
                 <th>Status</th>
                 <th>Loaded By</th>
 
@@ -997,8 +955,7 @@
                 <th>Barcode</th>
                 <th>Description</th>
                 <th>Pack Size</th>
-                <th>Sell By</th>
-                <th>BB</th>
+                <th>Sell By / BB</th>
                 <th>Cases / Pallet</th>
                 <th>Units / Case</th>
 
@@ -1157,7 +1114,7 @@
 
         <div class="button-row">
 
-          <button id="endCurrentSessionButton" class="danger-button">
+          <button id="endCurrentSessionButtonSettings" class="danger-button end-session-button">
             End Current Session
           </button>
 
@@ -1319,16 +1276,6 @@
 
       </div>
 
-
-      <div class="form-group">
-
-        <label for="sessionRoute">
-          Route
-        </label>
-
-        <input id="sessionRoute" type="text" placeholder="e.g. JHB Central">
-
-      </div>
 
 
       <div class="button-row end">
