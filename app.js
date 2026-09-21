@@ -160,10 +160,10 @@ const PRODUCT_MASTER_TSV = `Product Code|Outer Barcode|Barcode|Product|Pack size
 4108AJ|26005574002861|6005574002867|KC Tomato Flavoured Potato Chips 36 g (24)|36 g|153|#N/A|81|24
 4108AK|26005574002885|6005574002881|KC Grilled Steak Flavoured Potato Chips 36 g (24)|36 g|153|#N/A|81|24
 4108AO|26005574003462|6005574003468|KC Blazin' Hot BBQ Flavoured 36 g (24)|36 g|153|#N/A|81|24
-4120AA|16009881178052|6009881178055|POFZ - Chilli Biltong Flavoured Popcorn 90 g|90 g|#N/A|212|32|14
-4120AB|16009881178069|6009881178062|POFZ - Four Cheeses Flavoured Popcorn 90 g|90 g|#N/A|212|32|14
-4120AC|16009881178038|6009881178031|POFZ - Smokey BBQ Flavoured Popcorn 90 g|90 g|#N/A|212|32|14
-4120AD|16009881178045|6009881178048|POFZ - Vanilla Coconut Flavoured Popcorn 90 g|90 g|#N/A|212|32|14`;
+4120AA|16009881178052|6009881178055|POPZ - Chilli Biltong Flavoured Popcorn 90 g|90 g|#N/A|212|32|14
+4120AB|16009881178069|6009881178062|POPZ - Four Cheeses Flavoured Popcorn 90 g|90 g|#N/A|212|32|14
+4120AC|16009881178038|6009881178031|POPZ - Smokey BBQ Flavoured Popcorn 90 g|90 g|#N/A|212|32|14
+4120AD|16009881178045|6009881178048|POPZ - Vanilla Coconut Flavoured Popcorn 90 g|90 g|#N/A|212|32|14`;
 
     function parseProductMaster() {
         const lines = PRODUCT_MASTER_TSV.trim().split(/\r?\n/).map(line => line.trim()).filter(Boolean);

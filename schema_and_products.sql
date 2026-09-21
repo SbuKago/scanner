@@ -291,10 +291,10 @@ VALUES
 ('4108AY', '16009710723149', '6009710723142', 'Lay''s KC Cheddar & Cranberry 30 g', '30g', 'N/A', '126', 56, 48, '48 / Outer Case'),
 ('4108AW', '16009710723163', '6009710723166', 'Lay''s KC Rib-Eye & Mushroom 120 g', '120g', 'N/A', '126', 54, 20, '20 / Outer Case'),
 ('4108AX', '16009710723132', '6009710723135', 'Lay''s KC Rib-Eye & Mushroom 30 g', '30g', 'N/A', '126', 56, 48, '48 / Outer Case')
-('4120AA', '6009881178055', '16009881178052', 'POFZ - Chilli Biltong Flavoured Popcorn 90 g', '90 g', 'N/A', '212', 32, 14, '14 / Outer Case'),
-('4120AB', '6009881178062', '16009881178069', 'POFZ - Four Cheeses Flavoured Popcorn 90 g', '90 g', 'N/A', '212', 32, 14, '14 / Outer Case'),
-('4120AC', '6009881178031', '16009881178038', 'POFZ - Smokey BBQ Flavoured Popcorn 90 g', '90 g', 'N/A', '212', 32, 14, '14 / Outer Case'),
-('4120AD', '6009881178048', '16009881178045', 'POFZ - Vanilla Coconut Flavoured Popcorn 90 g', '90 g', 'N/A', '212', 32, 14, '14 / Outer Case');
+('4120AA', '6009881178055', '16009881178052', 'POPZ - Chilli Biltong Flavoured Popcorn 90 g', '90 g', 'N/A', '212', 32, 14, '14 / Outer Case'),
+('4120AB', '6009881178062', '16009881178069', 'POPZ - Four Cheeses Flavoured Popcorn 90 g', '90 g', 'N/A', '212', 32, 14, '14 / Outer Case'),
+('4120AC', '6009881178031', '16009881178038', 'POPZ - Smokey BBQ Flavoured Popcorn 90 g', '90 g', 'N/A', '212', 32, 14, '14 / Outer Case'),
+('4120AD', '6009881178048', '16009881178045', 'POPZ - Vanilla Coconut Flavoured Popcorn 90 g', '90 g', 'N/A', '212', 32, 14, '14 / Outer Case');
 
 ON DUPLICATE KEY UPDATE
   outer_barcode = VALUES(outer_barcode),
