@@ -759,3 +759,109 @@ tbody tr:hover {
     min-height: 240px;
   }
 }
+
+
+/* =========================================================
+   VERIFY PRODUCT IMAGE
+   Image is intentionally used ONLY in the Verify Barcode
+   result. Loading / Dispatch screens are not affected.
+   ========================================================= */
+
+.verify-product-card {
+    display: grid;
+    grid-template-columns: minmax(180px, 280px) 1fr;
+    gap: 28px;
+    align-items: start;
+    width: 100%;
+}
+
+.verify-product-photo {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.verify-product-image {
+    width: 100%;
+    max-width: 280px;
+    min-height: 280px;
+    border-radius: 14px;
+    overflow: hidden;
+    background: #f5f7fa;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.verify-product-image img {
+    display: block;
+    width: 100%;
+    height: 280px;
+    object-fit: contain;
+    background: #fff;
+}
+
+.verify-product-image-placeholder {
+    flex-direction: column;
+    gap: 8px;
+    color: #6b7280;
+}
+
+.verify-product-image-placeholder > span {
+    font-size: 52px;
+}
+
+.verify-product-image-placeholder small {
+    font-size: 13px;
+}
+
+.verify-product-details {
+    min-width: 0;
+}
+
+.verify-product-details .result-icon {
+    margin-bottom: 8px;
+}
+
+.verify-product-info {
+    margin-top: 12px;
+}
+
+.verify-product-info p {
+    margin: 7px 0;
+}
+
+.image-fallback {
+    width: 100%;
+    height: 280px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    color: #6b7280;
+    background: #f5f7fa;
+}
+
+.image-fallback.hidden {
+    display: none;
+}
+
+@media (max-width: 700px) {
+    .verify-product-card {
+        grid-template-columns: 1fr;
+        gap: 18px;
+    }
+
+    .verify-product-image {
+        max-width: 240px;
+        min-height: 240px;
+        margin: 0 auto;
+    }
+
+    .verify-product-image img,
+    .image-fallback {
+        height: 240px;
+    }
+}

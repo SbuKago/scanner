@@ -1,0 +1,4 @@
+Add one JPG image per SKU/product code here.
+Example: product code 410810 -> images/products/410810.jpg
+The image appears only after a product is found in Verify Barcode.
+Loading / Dispatch does not display product images.

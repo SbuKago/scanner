@@ -342,6 +342,42 @@ function generateId() {
     }
 
     /* =========================================================
+       PRODUCT IMAGES - VERIFY ONLY
+       ========================================================= */
+    function getProductImagePath(product) {
+        if (!product || !isValidCode(product.productCode)) return "";
+        return `images/products/${encodeURIComponent(String(product.productCode).trim())}.jpg`;
+    }
+
+    function getProductImageHtml(product) {
+        const imagePath = getProductImagePath(product);
+
+        if (!imagePath) {
+            return `
+                <div class="verify-product-image verify-product-image-placeholder">
+                    <span>📦</span>
+                    <small>No product image</small>
+                </div>
+            `;
+        }
+
+        return `
+            <div class="verify-product-image">
+                <img
+                    src="${escapeHtml(imagePath)}"
+                    alt="${escapeHtml(getProductDescription(product))}"
+                    loading="eager"
+                    onerror="this.style.display='none'; this.parentElement.classList.add('verify-product-image-placeholder'); this.parentElement.querySelector('.image-fallback')?.classList.remove('hidden');"
+                >
+                <div class="image-fallback hidden">
+                    <span>📦</span>
+                    <small>No product image</small>
+                </div>
+            </div>
+        `;
+    }
+
+    /* =========================================================
        PRODUCT SEARCH
        ========================================================= */
     function getProductByAnyCode(value) {
@@ -851,7 +887,7 @@ function calculateUnitTotals() {
         const product = getProductByAnyCode(value);
 
         if (!product) {
-            result.className = "scan-result error";
+            result.className = "scan-result error verify-result";
             result.innerHTML = `
                 <div class="result-icon">✕</div>
                 <h3>NO MATCH FOUND</h3>
@@ -860,19 +896,30 @@ function calculateUnitTotals() {
             return;
         }
 
-        result.className = "scan-result success";
+        result.className = "scan-result success verify-result";
         result.innerHTML = `
-            <div class="result-icon">✓</div>
-            <h3>PRODUCT VERIFIED</h3>
-            <p><strong>Product Code:</strong> ${escapeHtml(product.productCode)}</p>
-            <p><strong>Product:</strong> ${escapeHtml(getProductDescription(product))}</p>
-            <p><strong>Barcode:</strong> ${escapeHtml(product.barcode)}</p>
-            <p><strong>Outer Barcode:</strong> ${escapeHtml(getEffectiveOuterBarcode(product))}</p>
-            <p><strong>Pack Size:</strong> ${escapeHtml(displayValue(product.packSize))}</p>
-            <p><strong>Sell By:</strong> ${escapeHtml(displayValue(product.sellBy))}</p>
-            <p><strong>BB:</strong> ${escapeHtml(displayValue(product.bb))}</p>
-            <p><strong>Cases/Pallet:</strong> ${escapeHtml(product.casesPerPallet)}</p>
-            <p><strong>Units/Case:</strong> ${escapeHtml(product.unitsPerCase)}</p>
+            <div class="verify-product-card">
+                <div class="verify-product-photo">
+                    ${getProductImageHtml(product)}
+                </div>
+
+                <div class="verify-product-details">
+                    <div class="result-icon">✓</div>
+                    <h3>PRODUCT VERIFIED</h3>
+
+                    <div class="verify-product-info">
+                        <p><strong>Product Code:</strong> ${escapeHtml(product.productCode)}</p>
+                        <p><strong>Product:</strong> ${escapeHtml(getProductDescription(product))}</p>
+                        <p><strong>Barcode:</strong> ${escapeHtml(product.barcode)}</p>
+                        <p><strong>Outer Barcode:</strong> ${escapeHtml(getEffectiveOuterBarcode(product))}</p>
+                        <p><strong>Pack Size:</strong> ${escapeHtml(displayValue(product.packSize))}</p>
+                        <p><strong>Sell By:</strong> ${escapeHtml(displayValue(product.sellBy))}</p>
+                        <p><strong>BB:</strong> ${escapeHtml(displayValue(product.bb))}</p>
+                        <p><strong>Cases/Pallet:</strong> ${escapeHtml(product.casesPerPallet)}</p>
+                        <p><strong>Units/Case:</strong> ${escapeHtml(product.unitsPerCase)}</p>
+                    </div>
+                </div>
+            </div>
         `;
     }
 
