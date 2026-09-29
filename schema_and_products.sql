@@ -1,3 +1,4 @@
+
 -- ============================================================
 -- DISPATCH BARCODE SCANNING DATABASE SCHEMA
 -- ============================================================
@@ -306,3 +307,16 @@ ON DUPLICATE KEY UPDATE
   bb_date = VALUES(bb_date),
   cases_per_pallet = VALUES(cases_per_pallet),
   units_per_case = VALUES(units_per_case);
+
+
+
+-- ============================================================
+-- SHELF-LIFE / DATE CALCULATOR MIGRATION
+-- Dispatch rule: MORE THAN 3 calendar months remaining.
+-- ============================================================
+ALTER TABLE loading_history
+    ADD COLUMN IF NOT EXISTS shelf_life_days INT DEFAULT NULL,
+    ADD COLUMN IF NOT EXISTS shelf_life_weeks DECIMAL(10,2) DEFAULT NULL,
+    ADD COLUMN IF NOT EXISTS shelf_life_months INT DEFAULT NULL,
+    ADD COLUMN IF NOT EXISTS shelf_life_extra_days INT DEFAULT NULL,
+    ADD COLUMN IF NOT EXISTS shelf_life_status VARCHAR(50) DEFAULT NULL;

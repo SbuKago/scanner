@@ -43,6 +43,7 @@
          APPLICATION NOTICE
          ===================================================== -->
   <div id="appNotice" class="app-notice hidden"></div>
+  <div class="app-version-badge">Date Calculator • 3-Month Shelf-Life Rule</div>
 
 
   <!-- =====================================================
@@ -70,8 +71,8 @@
       Product Master
     </button>
 
-    <button class="nav-button" data-section="problems">
-      Barcode Problems
+    <button class="nav-button" data-section="date-calculator">
+      Date Calculator
     </button>
 
     <button class="nav-button" data-section="reports">
@@ -661,6 +662,10 @@
             <input id="loadSellByBbDate" type="date">
           </div>
 
+          <div id="loadShelfLifeResult" class="shelf-life-result neutral">
+            <strong>Shelf-life check:</strong> Enter the Sell By / Best Before date.
+          </div>
+
 
 
           <!-- LOADED BY -->
@@ -976,6 +981,60 @@
 
     </section>
 
+
+
+    <!-- =================================================
+             DATE CALCULATOR
+             ================================================= -->
+    <section id="date-calculator" class="page-section">
+
+      <div class="page-heading">
+        <div>
+          <h2>Date Calculator</h2>
+          <p>Check the exact shelf life of a product before dispatch.</p>
+        </div>
+      </div>
+
+      <div class="panel date-calculator-panel">
+        <div class="panel-header">
+          <div>
+            <h3>3-Month Shelf-Life Check</h3>
+            <p class="help-text">A product must have <strong>MORE THAN 3 MONTHS</strong> remaining. Exactly 3 months is
+              not accepted.</p>
+          </div>
+        </div>
+
+        <div class="form-grid">
+          <div class="form-group">
+            <label for="dateCalcFrom">Loading / Start Date</label>
+            <input id="dateCalcFrom" type="date">
+          </div>
+          <div class="form-group">
+            <label for="dateCalcTo">Sell By / Best Before Date</label>
+            <input id="dateCalcTo" type="date">
+          </div>
+        </div>
+
+        <div class="button-row">
+          <button id="dateCalcTodayButton" type="button" class="secondary-button">Use Today</button>
+          <button id="dateCalcClearButton" type="button" class="secondary-button">Clear</button>
+          <button id="dateCalcThreeMonthsButton" type="button" class="primary-button">Set 3-Month Date</button>
+        </div>
+
+        <div id="dateCalcResult" class="date-calc-result">
+          <div class="date-calc-empty">Enter both dates to calculate days, weeks and months.</div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h3>Dispatch Rule</h3>
+        <div class="rule-box">
+          <strong>Products with 3 months or less remaining cannot be dispatched.</strong>
+          <p>The loading screen performs the same check automatically before saving a loading transaction.</p>
+        </div>
+      </div>
+
+    </section>
 
 
     <!-- =================================================
@@ -1429,7 +1488,7 @@
   <!-- =====================================================
          APP JAVASCRIPT
          ===================================================== -->
-  <script src="app.js"></script>
+  <script src="app.js?v=20260930-datecalc-final"></script>
 
 </body>
 

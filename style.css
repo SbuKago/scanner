@@ -1,3 +1,4 @@
+
 * {
   box-sizing: border-box;
 }
@@ -865,3 +866,36 @@ tbody tr:hover {
         height: 240px;
     }
 }
+
+
+
+/* =========================================================
+   DATE CALCULATOR / SHELF LIFE
+   ========================================================= */
+.date-calculator-panel { max-width: 1000px; }
+.shelf-life-result {
+  margin-top: 12px;
+  padding: 14px 16px;
+  border-radius: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  border: 1px solid var(--border-color, #d8dee9);
+}
+.shelf-life-result.success { border-color: #198754; background: #eefaf2; color: #155724; }
+.shelf-life-result.error { border-color: #dc3545; background: #fff1f2; color: #842029; }
+.shelf-life-result.neutral { background: #f6f8fa; }
+.date-calc-result { margin-top: 18px; }
+.date-calc-empty { padding: 20px; text-align: center; opacity: .75; border: 1px dashed #cbd5e1; border-radius: 10px; }
+.date-calc-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin-bottom: 16px; }
+.date-calc-grid > div { padding: 18px; border: 1px solid #d8dee9; border-radius: 10px; text-align: center; background: #fff; }
+.date-calc-grid span { display: block; font-size: .85rem; opacity: .7; margin-bottom: 7px; }
+.date-calc-grid strong { display: block; font-size: 1.55rem; }
+.date-calc-status { padding: 16px; border-radius: 10px; display: flex; flex-direction: column; gap: 5px; }
+.date-calc-status.success { border: 1px solid #198754; background: #eefaf2; color: #155724; }
+.date-calc-status.error { border: 1px solid #dc3545; background: #fff1f2; color: #842029; }
+.rule-box { padding: 16px; border-radius: 10px; border: 1px solid #d8dee9; }
+@media (max-width: 700px) { .date-calc-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 420px) { .date-calc-grid { grid-template-columns: 1fr; } }
+
+.app-version-badge{font-size:.75rem;opacity:.7;text-align:center;padding:4px 8px;}

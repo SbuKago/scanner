@@ -1,3 +1,4 @@
+
 (function () {
     "use strict";
 
@@ -19,7 +20,7 @@
         session: "dispatch_session"
     };
 
-    const PRODUCT_MASTER_VERSION = "2026-08-19-FINAL-01";
+    const PRODUCT_MASTER_VERSION = "2026-09-30-DATE-CALCULATOR-FINAL";
 
     const AUTHORIZED_USERS = [
         "Sibusiso Makhonjwa",
@@ -784,6 +785,145 @@ function calculateUnitTotals() {
 }
 
     /* =========================================================
+       DATE CALCULATOR / SHELF LIFE
+       ========================================================= */
+    const MIN_SHELF_LIFE_MONTHS = 3;
+
+    function parseDateInput(value) {
+        if (!value) return null;
+        const parts = String(value).split("-").map(Number);
+        if (parts.length !== 3 || parts.some(Number.isNaN)) return null;
+        const [year, month, day] = parts;
+        const date = new Date(Date.UTC(year, month - 1, day));
+        return Number.isNaN(date.getTime()) ? null : date;
+    }
+
+    function dateToInputValue(date) {
+        if (!date) return "";
+        return [
+            date.getUTCFullYear(),
+            String(date.getUTCMonth() + 1).padStart(2, "0"),
+            String(date.getUTCDate()).padStart(2, "0")
+        ].join("-");
+    }
+
+    function addCalendarMonths(date, months) {
+        const result = new Date(date.getTime());
+        const originalDay = result.getUTCDate();
+        result.setUTCDate(1);
+        result.setUTCMonth(result.getUTCMonth() + months);
+        const lastDay = new Date(Date.UTC(result.getUTCFullYear(), result.getUTCMonth() + 1, 0)).getUTCDate();
+        result.setUTCDate(Math.min(originalDay, lastDay));
+        return result;
+    }
+
+    function daysBetweenDates(start, end) {
+        return Math.round((end.getTime() - start.getTime()) / 86400000);
+    }
+
+    function calculateShelfLife(startValue, endValue) {
+        const start = parseDateInput(startValue);
+        const end = parseDateInput(endValue);
+        if (!start || !end) return null;
+
+        const days = daysBetweenDates(start, end);
+        if (days < 0) return { error: "The Sell By / Best Before date cannot be before the loading date." };
+
+        let months = (end.getUTCFullYear() - start.getUTCFullYear()) * 12 + (end.getUTCMonth() - start.getUTCMonth());
+        let anchor = addCalendarMonths(start, months);
+        if (anchor.getTime() > end.getTime()) {
+            months -= 1;
+            anchor = addCalendarMonths(start, months);
+        }
+
+        const extraDays = daysBetweenDates(anchor, end);
+        const minimumDate = addCalendarMonths(start, MIN_SHELF_LIFE_MONTHS);
+        const acceptable = end.getTime() > minimumDate.getTime();
+        const exactThree = end.getTime() === minimumDate.getTime();
+
+        return {
+            days,
+            weeks: days / 7,
+            months,
+            extraDays,
+            minimumDate,
+            minimumDateValue: dateToInputValue(minimumDate),
+            acceptable,
+            exactThree,
+            status: acceptable ? "ACCEPTABLE" : (exactThree ? "EXACTLY 3 MONTHS" : "LESS THAN 3 MONTHS")
+        };
+    }
+
+    function displayDate(value) {
+        const date = parseDateInput(value);
+        if (!date) return "-";
+        return `${String(date.getUTCDate()).padStart(2, "0")}/${String(date.getUTCMonth() + 1).padStart(2, "0")}/${date.getUTCFullYear()}`;
+    }
+
+    function updateLoadShelfLife() {
+        const input = $("loadSellByBbDate");
+        const result = $("loadShelfLifeResult");
+        if (!input || !result) return;
+        if (!input.value) {
+            result.className = "shelf-life-result neutral";
+            result.innerHTML = "<strong>Shelf-life check:</strong> Enter the Sell By / Best Before date.";
+            return;
+        }
+        const calc = calculateShelfLife(getToday(), input.value);
+        if (!calc || calc.error) {
+            result.className = "shelf-life-result error";
+            result.innerHTML = `<strong>INVALID:</strong> ${escapeHtml(calc?.error || "Enter a valid date.")}`;
+            return;
+        }
+        result.className = `shelf-life-result ${calc.acceptable ? "success" : "error"}`;
+        result.innerHTML = `
+            <strong>${escapeHtml(calc.status)}</strong>
+            <span>Remaining: <b>${calc.days} days</b> / ${calc.months} month${calc.months === 1 ? "" : "s"}${calc.extraDays ? ` ${calc.extraDays} day${calc.extraDays === 1 ? "" : "s"}` : ""} / ${calc.weeks.toFixed(1)} weeks.</span>
+            <span>Minimum allowed date: <b>${displayDate(calc.minimumDateValue)}</b></span>
+            <span>${calc.acceptable ? "Product may be dispatched." : "DO NOT DISPATCH — product has 3 months or less remaining."}</span>
+        `;
+    }
+
+    function updateDateCalculator() {
+        const from = $("dateCalcFrom");
+        const to = $("dateCalcTo");
+        const result = $("dateCalcResult");
+        if (!from || !to || !result) return;
+
+        if (!from.value || !to.value) {
+            result.innerHTML = '<div class="date-calc-empty">Enter both dates to calculate days, weeks and months.</div>';
+            return;
+        }
+
+        const calc = calculateShelfLife(from.value, to.value);
+        if (!calc || calc.error) {
+            result.innerHTML = `<div class="date-calc-status error"><strong>Invalid dates</strong><span>${escapeHtml(calc?.error || "Enter valid dates.")}</span></div>`;
+            return;
+        }
+
+        result.innerHTML = `
+            <div class="date-calc-grid">
+                <div><span>Days</span><strong>${calc.days}</strong></div>
+                <div><span>Weeks</span><strong>${calc.weeks.toFixed(1)}</strong></div>
+                <div><span>Calendar Months</span><strong>${calc.months}</strong></div>
+                <div><span>Extra Days</span><strong>${calc.extraDays}</strong></div>
+            </div>
+            <div class="date-calc-status ${calc.acceptable ? "success" : "error"}">
+                <strong>${calc.status}</strong>
+                <span>Minimum date allowed: ${displayDate(calc.minimumDateValue)}</span>
+                <span>${calc.acceptable ? "This product meets the MORE THAN 3 MONTHS requirement." : "This product must NOT be dispatched."}</span>
+            </div>
+        `;
+    }
+
+    function initDateCalculator() {
+        const from = $("dateCalcFrom");
+        if (!from) return;
+        if (!from.value) from.value = getToday();
+        updateDateCalculator();
+    }
+
+    /* =========================================================
        CONFIRM LOAD
        ========================================================= */
     function confirmLoad() {
@@ -805,6 +945,19 @@ function calculateUnitTotals() {
         const cases = Math.max(0, parseInt($("loadCases")?.value || "0", 10) || 0);
         const units = Math.max(0, parseInt($("loadQuantity")?.value || "0", 10) || 0);
         const sellByBbDate = $("loadSellByBbDate")?.value || "";
+
+        if (!sellByBbDate) {
+            showToast("Enter the Sell By / Best Before date.", "warning");
+            $("loadSellByBbDate")?.focus();
+            return;
+        }
+
+        const shelfLife = calculateShelfLife(getToday(), sellByBbDate);
+        if (!shelfLife || shelfLife.error || !shelfLife.acceptable) {
+            showToast("LOAD BLOCKED: Product must have MORE THAN 3 MONTHS remaining.", "error");
+            updateLoadShelfLife();
+            return;
+        }
 
         if (pallets === 0) {
             showToast("Enter the number of pallets before saving.", "warning");
@@ -835,6 +988,11 @@ function calculateUnitTotals() {
             product: getProductDescription(currentScannedProduct),
             packSize: currentScannedProduct.packSize,
             sellByBbDate: sellByBbDate,
+            shelfLifeDays: shelfLife.days,
+            shelfLifeWeeks: Number(shelfLife.weeks.toFixed(2)),
+            shelfLifeMonths: shelfLife.months,
+            shelfLifeExtraDays: shelfLife.extraDays,
+            shelfLifeStatus: shelfLife.status,
             // Keep legacy fields for old exports/records, but use the single new date field.
             sellBy: sellByBbDate,
             bb: sellByBbDate,
@@ -1061,6 +1219,11 @@ function renderLoadingHistory() {
             Cases: record.cases ?? "",
             Units: record.quantity ?? "",
             "Sell By / BB": record.sellByBbDate || record.sellBy || record.bb || "",
+            "Shelf Life (Days)": record.shelfLifeDays ?? "",
+            "Shelf Life (Weeks)": record.shelfLifeWeeks ?? "",
+            "Shelf Life (Months)": record.shelfLifeMonths ?? "",
+            "Shelf Life Extra Days": record.shelfLifeExtraDays ?? "",
+            "Shelf Life Status": record.shelfLifeStatus || "",
             Status: record.status || "",
             "Loaded By": record.loadedBy || "",
             "Session ID": record.sessionId || "",
@@ -1193,6 +1356,7 @@ function renderLoadingHistory() {
         if (sectionId === "history") renderLoadingHistory();
         if (sectionId === "products") renderProducts();
         if (sectionId === "problems") renderProblems();
+        if (sectionId === "date-calculator") initDateCalculator();
     }
 
     /* =========================================================
@@ -1433,6 +1597,29 @@ function setupMenu() {
         $("loadPallets")?.addEventListener("change", calculatePalletTotals);
         $("loadCases")?.addEventListener("input", calculateUnitTotals);
         $("loadCases")?.addEventListener("change", calculateUnitTotals);
+        $("loadSellByBbDate")?.addEventListener("input", updateLoadShelfLife);
+        $("loadSellByBbDate")?.addEventListener("change", updateLoadShelfLife);
+
+        /* DATE CALCULATOR */
+        $("dateCalcFrom")?.addEventListener("input", updateDateCalculator);
+        $("dateCalcFrom")?.addEventListener("change", updateDateCalculator);
+        $("dateCalcTo")?.addEventListener("input", updateDateCalculator);
+        $("dateCalcTo")?.addEventListener("change", updateDateCalculator);
+        $("dateCalcTodayButton")?.addEventListener("click", () => {
+            $("dateCalcFrom").value = getToday();
+            updateDateCalculator();
+        });
+        $("dateCalcClearButton")?.addEventListener("click", () => {
+            $("dateCalcFrom").value = getToday();
+            $("dateCalcTo").value = "";
+            updateDateCalculator();
+        });
+        $("dateCalcThreeMonthsButton")?.addEventListener("click", () => {
+            const from = parseDateInput($("dateCalcFrom").value || getToday());
+            $("dateCalcFrom").value = dateToInputValue(from);
+            $("dateCalcTo").value = dateToInputValue(addCalendarMonths(from, 3));
+            updateDateCalculator();
+        });
 
         /* INTERNAL LINKING (DATA-GO BUTTONS) */
         document.querySelectorAll("[data-go]").forEach(button => {
@@ -1557,3 +1744,4 @@ function setupMenu() {
     }
 
 })();
+
